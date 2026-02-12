@@ -2,7 +2,7 @@ import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { setTimeout } from 'node:timers/promises';
 import { HiveParserCacheService } from '../cache-module/hive-parser-cache.service';
 import { HiveMainParser } from './hive-main-parser';
-import { HiveClient } from '../../infrastructure/clients/hive-client/hive-client';
+import { HiveClient } from '@waivio-core/clients';
 
 @Injectable()
 export class HiveProcessorService implements OnApplicationBootstrap {

@@ -1,11 +1,12 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis, { ChainableCommander } from 'ioredis';
 import {
   RedisClientInterface,
   RedisClientFactoryInterface,
   RedisPipelineInterface,
 } from './interface';
+import { REDIS_MODULE_OPTIONS } from './redis-client.options';
+import type { RedisModuleOptions } from './redis-client.options';
 
 type NativePipeline = ChainableCommander;
 
@@ -97,8 +98,10 @@ export class RedisClientFactory
   private readonly clients = new Map<number, RedisClientWrapper>();
   private readonly redisUri: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.redisUri = this.configService.get<string>('redis.uri') ?? '';
+  constructor(
+    @Inject(REDIS_MODULE_OPTIONS) options: RedisModuleOptions,
+  ) {
+    this.redisUri = options.uri;
   }
 
   getClient(db = 0): RedisClientInterface {

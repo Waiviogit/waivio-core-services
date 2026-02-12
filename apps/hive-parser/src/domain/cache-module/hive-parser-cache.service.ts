@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   RedisClientFactory,
   RedisClientInterface,
-} from '../../infrastructure/clients/redis-client';
+} from '@waivio-core/clients';
 
 @Injectable()
 export class HiveParserCacheService {

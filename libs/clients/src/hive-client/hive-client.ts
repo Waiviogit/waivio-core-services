@@ -1,29 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { GetVoteInterface, HiveClientInterface } from './interface';
 import { ActiveVotesType, CommentStateType, HiveContentType } from './type';
 import { CommentOptionsOperation } from '@hiveio/dhive/lib/chain/operation';
 import { BeneficiaryRoute } from '@hiveio/dhive/lib/chain/comment';
 import { SignedBlock } from '@hiveio/dhive/lib/chain/block';
-import {
-  CONDENSER_API,
-  HIVE_RPC_NODES,
-  BRIDGE,
-} from '../../../constants/hive-parser';
+import { CONDENSER_API, BRIDGE } from './constants';
 import { UrlRotationManager, UrlRotationService } from '../redis-client';
+import { HIVE_CLIENT_MODULE_OPTIONS } from './hive-client.options';
+import type { HiveClientModuleOptions } from './hive-client.options';
 
 @Injectable()
 export class HiveClient implements HiveClientInterface {
   private readonly logger = new Logger(HiveClient.name);
-  private readonly hiveNodes: string[] = HIVE_RPC_NODES;
   private readonly urlRotationManager: UrlRotationManager;
 
-  constructor(private readonly urlRotationService: UrlRotationService) {
+  constructor(
+    @Inject(HIVE_CLIENT_MODULE_OPTIONS)
+    private readonly options: HiveClientModuleOptions,
+    private readonly urlRotationService: UrlRotationService,
+  ) {
     this.urlRotationManager = this.urlRotationService.getManager({
-      nodes: this.hiveNodes,
-      cachePrefix: 'hiveRpcNode',
-      cacheTtlSeconds: 1200,
-      maxResponseTimeMs: 8000,
-      db: 10,
+      nodes: this.options.nodes,
+      cachePrefix: this.options.cachePrefix ?? 'hiveRpcNode',
+      cacheTtlSeconds: this.options.cacheTtlSeconds ?? 1200,
+      maxResponseTimeMs: this.options.maxResponseTimeMs ?? 8000,
+      db: this.options.urlRotationDb ?? 10,
     });
   }
 
@@ -36,7 +37,7 @@ export class HiveClient implements HiveClientInterface {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      return this.hiveNodes[0];
+      return this.options.nodes[0];
     }
   }
 

@@ -1,2 +1,2 @@
-export * from './clients.module';
-export * from './clients.service';
+export * from './redis-client';
+export * from './hive-client';
