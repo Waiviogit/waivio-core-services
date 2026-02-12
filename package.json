@@ -76,7 +76,8 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
-      "^@waivio-core/clients(|/.*)$": "<rootDir>/libs/clients/src/$1"
+      "^@waivio-core/clients(|/.*)$": "<rootDir>/libs/clients/src/$1",
+      "^@waivio-core/processors(|/.*)$": "<rootDir>/libs/processors/src/$1"
     }
   }
 }

@@ -1,8 +1,9 @@
-import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
+import { Inject, Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { setTimeout } from 'node:timers/promises';
-import { HiveParserCacheService } from '../cache-module/hive-parser-cache.service';
-import { HiveMainParser } from './hive-main-parser';
 import { HiveClient } from '@waivio-core/clients';
+import { BlockCacheService } from './block-cache.service';
+import { BLOCK_PARSER } from './hive-processor.options';
+import type { BlockParserInterface } from './hive-processor.options';
 
 @Injectable()
 export class HiveProcessorService implements OnApplicationBootstrap {
@@ -11,8 +12,8 @@ export class HiveProcessorService implements OnApplicationBootstrap {
 
   constructor(
     private readonly hiveClient: HiveClient,
-    private readonly cache: HiveParserCacheService,
-    private readonly mainParser: HiveMainParser,
+    private readonly cache: BlockCacheService,
+    @Inject(BLOCK_PARSER) private readonly blockParser: BlockParserInterface,
   ) {}
 
   async onApplicationBootstrap() {
@@ -47,7 +48,7 @@ export class HiveProcessorService implements OnApplicationBootstrap {
       return;
     }
     if (block && block.transactions && block.transactions[0]) {
-      await this.mainParser.parseBlock(block);
+      await this.blockParser.parseBlock(block);
       return;
     }
     throw new Error(`Unable to fetch block ${currentBlock}`);

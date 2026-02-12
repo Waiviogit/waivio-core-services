@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/objects-bot/tsconfig.app.json"
       }
+    },
+    "processors": {
+      "type": "library",
+      "root": "libs/processors",
+      "entryFile": "index",
+      "sourceRoot": "libs/processors/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/processors/tsconfig.lib.json"
+      }
     }
   }
 }

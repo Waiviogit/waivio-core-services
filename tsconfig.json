@@ -27,6 +27,12 @@
       ],
       "@waivio-core/clients/*": [
         "libs/clients/src/*"
+      ],
+      "@waivio-core/processors": [
+        "libs/processors/src"
+      ],
+      "@waivio-core/processors/*": [
+        "libs/processors/src/*"
       ]
     }
   }

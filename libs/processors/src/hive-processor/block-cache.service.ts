@@ -1,30 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-  RedisClientFactory,
-  RedisClientInterface,
-} from '@waivio-core/clients';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { RedisClientFactory, RedisClientInterface } from '@waivio-core/clients';
+import { HIVE_PROCESSOR_OPTIONS } from './hive-processor.options';
+import type { HiveProcessorModuleOptions } from './hive-processor.options';
 
 @Injectable()
-export class HiveParserCacheService {
-  private readonly logger = new Logger(HiveParserCacheService.name);
+export class BlockCacheService {
+  private readonly logger = new Logger(BlockCacheService.name);
   private readonly client: RedisClientInterface;
   private readonly blockNumberKey: string;
   private readonly defaultStartBlockNumber: number;
 
   constructor(
-    private readonly redisFactory: RedisClientFactory,
-    private readonly configService: ConfigService,
+    @Inject(HIVE_PROCESSOR_OPTIONS) options: HiveProcessorModuleOptions,
+    redisFactory: RedisClientFactory,
   ) {
-    this.client = this.redisFactory.getClient(2);
-    this.blockNumberKey = this.configService.get<string>(
-      'hive.blockNumberKey',
-      'hiveParser:blockNumber',
-    );
-    this.defaultStartBlockNumber = this.configService.get<number>(
-      'hive.startBlockNumber',
-      102138605,
-    );
+    this.client = redisFactory.getClient(options.redisDb ?? 0);
+    this.blockNumberKey = options.blockNumberKey;
+    this.defaultStartBlockNumber = options.startBlockNumber;
   }
 
   async getBlockNumber(): Promise<number> {
