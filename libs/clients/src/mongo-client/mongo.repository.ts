@@ -51,9 +51,7 @@ export interface MongoRepositoryInterface<
     params: FindOneAndDeleteType<TDocument>,
   ): Promise<TDocument | null>;
   aggregate<TResult = unknown>(params: AggregateType): Promise<TResult[]>;
-  deleteOne(
-    params: FindOneAndDeleteType<TDocument>,
-  ): Promise<DeleteResultType>;
+  deleteOne(params: FindOneAndDeleteType<TDocument>): Promise<DeleteResultType>;
   deleteMany(
     params: FindOneAndDeleteType<TDocument>,
   ): Promise<DeleteResultType>;
@@ -65,9 +63,10 @@ const EMPTY_DELETE_RESULT: DeleteResultType = {
 };
 
 @Injectable()
-export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
-  implements MongoRepositoryInterface<TDocument, TCreate>
-{
+export abstract class MongoRepository<
+  TDocument,
+  TCreate = Partial<TDocument>,
+> implements MongoRepositoryInterface<TDocument, TCreate> {
   protected constructor(
     protected readonly model: Model<TDocument>,
     protected readonly logger: Logger,
@@ -79,9 +78,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
         .find(params.filter as any, params.projection, params.options as any)
         .lean();
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return [];
     }
   }
@@ -92,9 +89,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
         .findOne(params.filter, params.projection, params.options)
         .lean();
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -107,9 +102,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
         .findOneAndUpdate(params.filter, params.update, params.options)
         .lean();
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -124,9 +117,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
         params.options as any,
       );
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -141,9 +132,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
         params.options as any,
       );
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -152,13 +141,9 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
     params: FindOneAndDeleteType<TDocument>,
   ): Promise<TDocument | null> {
     try {
-      return this.model
-        .findOneAndDelete(params.filter, params.options)
-        .lean();
+      return this.model.findOneAndDelete(params.filter, params.options).lean();
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -169,9 +154,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
     try {
       return this.model.deleteOne(params.filter, params.options as any);
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return EMPTY_DELETE_RESULT;
     }
   }
@@ -182,9 +165,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
     try {
       return this.model.deleteMany(params.filter, params.options as any);
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return EMPTY_DELETE_RESULT;
     }
   }
@@ -193,9 +174,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
     try {
       return await this.model.create(data as Partial<TDocument>);
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -206,9 +185,7 @@ export abstract class MongoRepository<TDocument, TCreate = Partial<TDocument>>
     try {
       return await this.model.aggregate<TResult>(pipeline);
     } catch (error) {
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       return [];
     }
   }

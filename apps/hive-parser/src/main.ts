@@ -9,15 +9,13 @@ async function bootstrap() {
     },
   );
 
-  process.on('SIGINT', async () => {
-    await hiveParser.close();
-    process.exit(0);
+  process.on('SIGINT', () => {
+    void hiveParser.close().then(() => process.exit(0));
   });
 
-  process.on('SIGTERM', async () => {
-    await hiveParser.close();
-    process.exit(0);
+  process.on('SIGTERM', () => {
+    void hiveParser.close().then(() => process.exit(0));
   });
 }
 
-bootstrap();
+void bootstrap();

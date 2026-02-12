@@ -1,8 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { MongoClientFactory } from './mongo-client';
-import {
-  MONGO_MODULE_OPTIONS,
-} from './mongo-client.options';
+import { MONGO_MODULE_OPTIONS } from './mongo-client.options';
 import type { MongoModuleOptions } from './mongo-client.options';
 
 @Module({})

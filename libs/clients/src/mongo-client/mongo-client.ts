@@ -8,19 +8,19 @@ export class MongoClientFactory implements OnModuleDestroy {
   private readonly logger = new Logger(MongoClientFactory.name);
   private readonly connections = new Map<string, Connection>();
 
-  constructor(
-    @Inject(MONGO_MODULE_OPTIONS) options: MongoModuleOptions,
-  ) {
+  constructor(@Inject(MONGO_MODULE_OPTIONS) options: MongoModuleOptions) {
     for (const conn of options.connections) {
       const name = conn.connectionName ?? 'default';
-      const connection = mongoose.createConnection(conn.uri);
+      const connection = mongoose.createConnection(conn.uri, conn.options);
 
       connection.on('connected', () => {
         this.logger.log(`Mongo "${name}" connected`);
       });
 
-      connection.on('error', (err) => {
-        this.logger.error(`Mongo "${name}" error: ${err.message}`);
+      connection.on('error', (err: unknown) => {
+        this.logger.error(
+          `Mongo "${name}" error: ${err instanceof Error ? err.message : String(err)}`,
+        );
       });
 
       this.connections.set(name, connection);

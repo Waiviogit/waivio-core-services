@@ -36,6 +36,7 @@ import { RepositoriesModule } from '../../repositories';
           {
             uri: config.get<string>('mongo.waivioDbUri') ?? '',
             connectionName: MONGO_CONNECTION.WAIVIO,
+            options: config.get('mongo.options'),
           },
         ],
       }),

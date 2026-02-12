@@ -98,9 +98,7 @@ export class RedisClientFactory
   private readonly clients = new Map<number, RedisClientWrapper>();
   private readonly redisUri: string;
 
-  constructor(
-    @Inject(REDIS_MODULE_OPTIONS) options: RedisModuleOptions,
-  ) {
+  constructor(@Inject(REDIS_MODULE_OPTIONS) options: RedisModuleOptions) {
     this.redisUri = options.uri;
   }
 

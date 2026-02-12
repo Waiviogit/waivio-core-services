@@ -1,4 +1,9 @@
-import { Inject, Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  OnApplicationBootstrap,
+  Logger,
+} from '@nestjs/common';
 import { setTimeout } from 'node:timers/promises';
 import { HiveClient } from '@waivio-core/clients';
 import { BlockCacheService } from './block-cache.service';
@@ -16,9 +21,9 @@ export class HiveProcessorService implements OnApplicationBootstrap {
     @Inject(BLOCK_PARSER) private readonly blockParser: BlockParserInterface,
   ) {}
 
-  async onApplicationBootstrap() {
+  onApplicationBootstrap() {
     this.logger.log('Hive Blockchain parser started');
-    this.loop();
+    void this.loop();
   }
 
   async loop() {

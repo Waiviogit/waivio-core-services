@@ -1,6 +1,9 @@
+import type { ConnectOptions } from 'mongoose';
+
 export interface MongoConnectionOptions {
   uri: string;
   connectionName?: string;
+  options?: ConnectOptions;
 }
 
 export interface MongoModuleOptions {

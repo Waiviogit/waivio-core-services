@@ -1,10 +1,7 @@
 import { DynamicModule, Module, Type } from '@nestjs/common';
 import { BlockCacheService } from './block-cache.service';
 import { HiveProcessorService } from './hive-processor.service';
-import {
-  HIVE_PROCESSOR_OPTIONS,
-  BLOCK_PARSER,
-} from './hive-processor.options';
+import { HIVE_PROCESSOR_OPTIONS, BLOCK_PARSER } from './hive-processor.options';
 import type {
   HiveProcessorModuleOptions,
   BlockParserInterface,

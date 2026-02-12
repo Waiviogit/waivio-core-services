@@ -1,6 +1,22 @@
+// Connection pool configuration
+const mongoOptions = {
+  maxPoolSize: 20,
+  minPoolSize: 2,
+  maxIdleTimeMS: 30000,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true,
+  heartbeatFrequencyMS: 10000,
+  maxConnecting: 2,
+};
+
 export default () => ({
   mongo: {
-    waivioDbUri: process.env.MONGO_URI_WAIVIO || 'mongodb://localhost:27017/waivio',
+    waivioDbUri:
+      process.env.MONGO_URI_WAIVIO || 'mongodb://localhost:27017/waivio',
+    options: mongoOptions,
   },
   redis: {
     uri: process.env.REDIS_URI,
