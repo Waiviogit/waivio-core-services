@@ -1,6 +1,6 @@
 export default () => ({
   mongo: {
-    waivioDbUri: process.env.MONGO_URI_WAIVIO,
+    waivioDbUri: process.env.MONGO_URI_WAIVIO || 'mongodb://localhost:27017/waivio',
   },
   redis: {
     uri: process.env.REDIS_URI,

@@ -7,6 +7,7 @@ import { HiveMainParser } from './hive-main-parser';
 import {
   RedisClientModule,
   HiveClientModule,
+  MongoClientModule,
 } from '@waivio-core/clients';
 import { HiveProcessorModule } from '@waivio-core/processors';
 import { HIVE_RPC_NODES } from '../../constants/hive-parser';
@@ -26,6 +27,17 @@ import { HIVE_RPC_NODES } from '../../constants/hive-parser';
     }),
     HiveClientModule.forRoot({
       nodes: HIVE_RPC_NODES,
+    }),
+    MongoClientModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        connections: [
+          {
+            uri: config.get<string>('mongo.waivioDbUri') ?? '',
+            connectionName: 'waivio',
+          },
+        ],
+      }),
+      inject: [ConfigService],
     }),
     HiveProcessorModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
