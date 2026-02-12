@@ -8,3 +8,7 @@ export interface MongoModuleOptions {
 }
 
 export const MONGO_MODULE_OPTIONS = 'MONGO_MODULE_OPTIONS';
+
+export const MONGO_CONNECTION = Object.freeze({
+  WAIVIO: 'waivio',
+} as const);

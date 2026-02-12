@@ -8,9 +8,11 @@ import {
   RedisClientModule,
   HiveClientModule,
   MongoClientModule,
+  MONGO_CONNECTION,
 } from '@waivio-core/clients';
 import { HiveProcessorModule } from '@waivio-core/processors';
 import { HIVE_RPC_NODES } from '../../constants/hive-parser';
+import { RepositoriesModule } from '../../repositories';
 
 @Module({
   imports: [
@@ -33,7 +35,7 @@ import { HIVE_RPC_NODES } from '../../constants/hive-parser';
         connections: [
           {
             uri: config.get<string>('mongo.waivioDbUri') ?? '',
-            connectionName: 'waivio',
+            connectionName: MONGO_CONNECTION.WAIVIO,
           },
         ],
       }),
@@ -54,6 +56,7 @@ import { HIVE_RPC_NODES } from '../../constants/hive-parser';
       inject: [ConfigService],
       blockParser: HiveMainParser,
     }),
+    RepositoriesModule,
   ],
 })
 export class HiveParserModule {}
