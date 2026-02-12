@@ -38,4 +38,4 @@ export const AppSchema = new Schema<AppDocument>(
 );
 
 export const appModel = (conn: Connection): Model<AppDocument> =>
-  conn.model<AppDocument>('App', AppSchema);
+  conn.model<AppDocument>('App', AppSchema, 'apps');
