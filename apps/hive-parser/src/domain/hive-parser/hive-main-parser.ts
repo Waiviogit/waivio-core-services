@@ -13,6 +13,7 @@ type OperationHandler = (
   payload: Operation[1],
   transaction: Transaction,
   timestamp: string,
+  operationIndex: number,
 ) => Promise<void>;
 
 @Injectable()
@@ -33,8 +34,8 @@ export class HiveMainParser {
           'hive.handlers.customJson.enabled',
           true,
         ),
-        handle: (p, t, ts) =>
-          this.customJsonParser.parse(p as CustomJsonOperation[1], t, ts),
+        handle: (p, t, ts, idx) =>
+          this.customJsonParser.parse(p as CustomJsonOperation[1], t, ts, idx),
       },
     };
   }
@@ -45,12 +46,17 @@ export class HiveMainParser {
     for (const transaction of transactions) {
       if (!transaction?.operations?.length) continue;
 
-      for (const [type, payload] of transaction.operations as [string, any][]) {
+      const operations = transaction.operations as [
+        string,
+        Record<string, unknown>,
+      ][];
+      for (let i = 0; i < operations.length; i++) {
+        const [type, payload] = operations[i];
         const handler = this.handlers[type];
         if (!handler?.enabled) continue;
 
         try {
-          await handler.handle(payload, transaction, timestamp);
+          await handler.handle(payload, transaction, timestamp, i);
         } catch (error: unknown) {
           this.logger.error(
             `Handler [${type}] failed: ${error instanceof Error ? error.message : String(error)}`,

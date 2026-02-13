@@ -3,17 +3,20 @@ import { z } from 'zod';
 const createObjectOp = z.object({
   method: z.literal('createObject'),
   params: z.object({
-    id: z.string(),
     author: z.string(),
-    data: z.record(z.unknown()),
+    permlink: z.string(),
+    defaultName: z.string(),
   }),
 });
 
 const updateObjectOp = z.object({
   method: z.literal('updateObject'),
   params: z.object({
-    id: z.string(),
-    patch: z.record(z.unknown()),
+    author: z.string(),
+    permlink: z.string(),
+    name: z.string(),
+    locale: z.string(),
+    body: z.string(),
   }),
 });
 

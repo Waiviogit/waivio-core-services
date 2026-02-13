@@ -10,6 +10,7 @@ type CustomJsonHandler = (
   payload: CustomJsonOperation[1],
   transaction: Transaction,
   timestamp: string,
+  operationIndex: number,
 ) => Promise<void>;
 
 type WaivioOperation = {
@@ -35,29 +36,31 @@ export class HiveCustomJsonParser {
           'hive.customJsonHandlers.waivioOperations.enabled',
           true,
         ),
-        handle: (p, t, ts) => this.handleWaivioOperations(p, t, ts),
+        handle: (p, t, ts, idx) => this.handleWaivioOperations(p, t, ts, idx),
       },
     };
   }
 
   private getTransactionAccount(customJson: CustomJsonOperation[1]): string {
-    return customJson.required_posting_auths[1] || customJson.required_auths[1];
+    return customJson.required_posting_auths[0] || customJson.required_auths[0];
   }
 
   async parse(
     payload: CustomJsonOperation[1],
     transaction: Transaction,
     timestamp: string,
+    operationIndex: number,
   ): Promise<void> {
     const handler = this.handlers[payload.id];
     if (!handler?.enabled) return;
-    await handler.handle(payload, transaction, timestamp);
+    await handler.handle(payload, transaction, timestamp, operationIndex);
   }
 
   private async handleWaivioOperations(
     payload: CustomJsonOperation[1],
     transaction: Transaction,
     timestamp: string,
+    operationIndex: number,
   ): Promise<void> {
     this.logger.log('handleWaivioOperations', payload);
     const parsedJson = this.jsonHelper.parseJson<WaivioOperation>(
@@ -69,6 +72,7 @@ export class HiveCustomJsonParser {
     if (!validated.success) return;
     const account = this.getTransactionAccount(payload);
     const { data } = validated;
-
+    console.log();
+    //trxId = transaction.transaction_id-operationIndex
   }
 }
