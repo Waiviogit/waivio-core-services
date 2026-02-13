@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SignedBlock } from '@hiveio/dhive/lib/chain/block';
-import { CUSTOM_JSON_ID, HIVE_OPERATION } from '../../constants/hive-parser';
+import { HIVE_OPERATION } from '../../constants/hive-parser';
 import {
   CustomJsonOperation,
   Operation,
 } from '@hiveio/dhive/lib/chain/operation';
 import { Transaction } from '@hiveio/dhive/lib/chain/transaction';
+import { HiveCustomJsonParser } from './hive-custom-json-parser';
 
 type OperationHandler = (
   payload: Operation[1],
@@ -16,17 +18,26 @@ type OperationHandler = (
 @Injectable()
 export class HiveMainParser {
   private readonly logger = new Logger(HiveMainParser.name);
-
   private readonly handlers: Record<
     string,
     { enabled: boolean; handle: OperationHandler }
-  > = {
-    [HIVE_OPERATION.CUSTOM_JSON]: {
-      enabled: true,
-      handle: (p, t, ts) =>
-        this.handleCustomJson(p as CustomJsonOperation[1], t, ts),
-    },
-  };
+  >;
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly customJsonParser: HiveCustomJsonParser,
+  ) {
+    this.handlers = {
+      [HIVE_OPERATION.CUSTOM_JSON]: {
+        enabled: this.configService.get<boolean>(
+          'hive.handlers.customJson.enabled',
+          true,
+        ),
+        handle: (p, t, ts) =>
+          this.customJsonParser.parse(p as CustomJsonOperation[1], t, ts),
+      },
+    };
+  }
 
   async parseBlock(block: SignedBlock): Promise<void> {
     const { transactions, timestamp } = block;
@@ -47,26 +58,5 @@ export class HiveMainParser {
         }
       }
     }
-  }
-
-  private readonly customJsonHandlers: Record<
-    string,
-    { enabled: boolean; handle: OperationHandler }
-  > = {
-    [CUSTOM_JSON_ID.WAIVIO_OPERATIONS]: {
-      enabled: true,
-      handle: (p, t, ts) =>
-        this.handleCustomJson(p as CustomJsonOperation[1], t, ts),
-    },
-  };
-
-  private async handleCustomJson(
-    payload: CustomJsonOperation[1],
-    transaction: Transaction,
-    timestamp: string,
-  ): Promise<void> {
-    const handler = this.handlers[payload.id];
-    // if (!handler?.enabled) return;
-    // await handler.handle(payload, transaction, timestamp);
   }
 }

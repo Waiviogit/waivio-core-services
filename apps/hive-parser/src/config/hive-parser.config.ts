@@ -27,5 +27,15 @@ export default () => ({
       10,
     ),
     blockNumberKey: process.env.BLOCK_NUMBER_KEY || 'hiveParser:blockNumber',
+    handlers: {
+      customJson: {
+        enabled: process.env.HANDLER_CUSTOM_JSON_ENABLED !== 'false',
+      },
+    },
+    customJsonHandlers: {
+      waivioOperations: {
+        enabled: process.env.HANDLER_WAIVIO_OPERATIONS_ENABLED !== 'false',
+      },
+    },
   },
 });

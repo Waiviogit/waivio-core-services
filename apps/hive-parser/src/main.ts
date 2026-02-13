@@ -1,20 +1,17 @@
 import { NestFactory } from '@nestjs/core';
-import { HiveParserModule } from './domain/hive-parser/hive-parser.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const hiveParser = await NestFactory.createApplicationContext(
-    HiveParserModule,
-    {
-      logger: ['log', 'error', 'warn'],
-    },
-  );
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['log', 'error', 'warn'],
+  });
 
   process.on('SIGINT', () => {
-    void hiveParser.close().then(() => process.exit(0));
+    void app.close().then(() => process.exit(0));
   });
 
   process.on('SIGTERM', () => {
-    void hiveParser.close().then(() => process.exit(0));
+    void app.close().then(() => process.exit(0));
   });
 }
 
