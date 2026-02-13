@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { UtilsModule } from '@waivio-core/common';
 import { HiveMainParser } from './hive-main-parser';
 import { HiveCustomJsonParserModule } from './hive-custom-json-parser.module';
 import { HiveProcessorModule } from '@waivio-core/processors';
@@ -9,7 +10,7 @@ import { HiveProcessorModule } from '@waivio-core/processors';
   imports: [
     HiveCustomJsonParserModule,
     HiveProcessorModule.forRootAsync({
-      imports: [HiveCustomJsonParserModule],
+      imports: [HiveCustomJsonParserModule, UtilsModule],
       useFactory: (config: ConfigService) => ({
         blockNumberKey: config.get<string>(
           'hive.blockNumberKey',

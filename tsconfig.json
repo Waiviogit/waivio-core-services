@@ -28,6 +28,12 @@
       "@waivio-core/clients/*": [
         "libs/clients/src/*"
       ],
+      "@waivio-core/common": [
+        "libs/common/src"
+      ],
+      "@waivio-core/common/*": [
+        "libs/common/src/*"
+      ],
       "@waivio-core/processors": [
         "libs/processors/src"
       ],

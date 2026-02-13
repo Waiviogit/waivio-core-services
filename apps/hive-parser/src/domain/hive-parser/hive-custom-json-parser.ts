@@ -46,5 +46,6 @@ export class HiveCustomJsonParser {
     timestamp: string,
   ): Promise<void> {
     this.logger.log('handleWaivioOperations', payload);
+
   }
 }
