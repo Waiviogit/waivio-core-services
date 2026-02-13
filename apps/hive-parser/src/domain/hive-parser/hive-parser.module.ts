@@ -1,16 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { UtilsModule } from '@waivio-core/common';
-import { HiveMainParser } from './hive-main-parser';
-import { HiveCustomJsonParserModule } from './hive-custom-json-parser.module';
+import { HiveParserProvidersModule } from './hive-parser-providers.module';
 import { HiveProcessorModule } from '@waivio-core/processors';
 
 @Module({
   imports: [
-    HiveCustomJsonParserModule,
+    HiveParserProvidersModule,
     HiveProcessorModule.forRootAsync({
-      imports: [HiveCustomJsonParserModule, UtilsModule],
+      imports: [HiveParserProvidersModule],
       useFactory: (config: ConfigService) => ({
         blockNumberKey: config.get<string>(
           'hive.blockNumberKey',
@@ -23,7 +21,6 @@ import { HiveProcessorModule } from '@waivio-core/processors';
         redisDb: 2,
       }),
       inject: [ConfigService],
-      blockParser: HiveMainParser,
     }),
   ],
 })
