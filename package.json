@@ -2,7 +2,9 @@
   "name": "@waivio-core-services/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start:hive-parser": "npx nx serve hive-parser"
+  },
   "private": true,
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.1",
