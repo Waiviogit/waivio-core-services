@@ -14,7 +14,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@waivio-core-services/clients": ["libs/clients/src/index.ts"],
+      "@waivio-core-services/common": ["libs/common/src/index.ts"],
+      "@waivio-core-services/processors": ["libs/processors/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
