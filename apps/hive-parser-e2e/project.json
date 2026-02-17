@@ -1,0 +1,17 @@
+{
+  "name": "hive-parser-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": ["hive-parser"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "apps/hive-parser-e2e/jest.config.cts",
+        "passWithNoTests": true
+      },
+      "dependsOn": ["hive-parser:build", "hive-parser:serve"]
+    }
+  }
+}
