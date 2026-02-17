@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start:hive-parser": "npx nx serve hive-parser"
+    "start:hive-parser": "npx nx serve hive-parser",
+    "docs:hive-parser": "ts-node -r tsconfig-paths/register apps/hive-parser/scripts/generate-docs.ts"
   },
   "private": true,
   "dependencies": {
