@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ObjectRepository } from '../../repositories';
-import type {
-  ObjectMethodHandler,
-  ObjectMethodContext,
-} from './interface';
+import type { ObjectMethodHandler, ObjectMethodContext } from './interface';
 import type { WaivioOperation } from '../hive-parser/schemas';
 
 @Injectable()
@@ -17,17 +14,16 @@ export class CreateObjectHandler implements ObjectMethodHandler {
     ctx: ObjectMethodContext,
   ): Promise<void> {
     if (operation.method !== 'createObject') return;
-    const {  permlink, defaultName, creator, objectType } =
-      operation.params;
+    const { permlink, defaultName, creator, objectType } = operation.params;
 
     this.logger.log(`createObject: ${objectType}/${permlink} by ${creator}`);
 
     await this.objectRepository.create({
       author: ctx.account,
-      permlink,
-      defaultName,
+      author_permlink: permlink,
+      default_name: defaultName,
       creator,
-      objectType,
+      object_type: objectType,
       transactionId: ctx.transactionId,
     });
   }

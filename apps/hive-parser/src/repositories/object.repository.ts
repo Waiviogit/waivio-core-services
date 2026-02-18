@@ -23,7 +23,7 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
   ): Promise<void> {
     await this.updateOne({
       filter: {
-        permlink: objectPermlink,
+        author_permlink: objectPermlink,
         'fields.transactionId': fieldTransactionId,
       },
       update: {

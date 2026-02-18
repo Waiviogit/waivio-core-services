@@ -22,14 +22,14 @@ export interface Authority {
 export interface ObjectDocument extends Document {
   app: string;
   community: string;
-  objectType: string;
-  defaultName: string;
+  object_type: string;
+  default_name: string;
   creator: string;
   author: string;
-  permlink: string;
+  author_permlink: string;
   transactionId: string;
   weight: number;
-  postsCount: number;
+  count_posts: number;
   parent: string;
   children: string[];
   authority: Authority;
@@ -73,18 +73,18 @@ export const ObjectSchema = new Schema<ObjectDocument>(
   {
     app: { type: String },
     community: { type: String },
-    objectType: { type: String },
-    defaultName: { type: String, required: true },
+    object_type: { type: String },
+    default_name: { type: String, required: true },
     creator: { type: String, required: true },
     author: { type: String, required: true },
-    permlink: {
+    author_permlink: {
       type: String,
       index: true,
       unique: true,
       required: true,
     },
     weight: { type: Number, default: 1 },
-    postsCount: { type: Number, default: 0 },
+    count_posts: { type: Number, default: 0 },
     parent: { type: String, default: '' },
     children: { type: [String], default: [] },
     authority: { type: AuthoritySchema, default: () => ({}) },
