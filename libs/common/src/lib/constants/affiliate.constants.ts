@@ -209,3 +209,14 @@ export const COUNTRY_TO_CONTINENT = Object.freeze({
 } as const);
 
 export const AFFILIATE_NULL_TYPES = Object.freeze(['none', 'null'] as const);
+
+export const VALID_AFFILIATE_GEO = Object.freeze([
+  'US',
+  'CA',
+  'GB',
+  'AU',
+  'DE',
+  'FR',
+  'IT',
+  'ES',
+] as const);

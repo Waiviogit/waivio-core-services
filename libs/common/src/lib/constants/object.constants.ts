@@ -613,3 +613,7 @@ export const OBJECT_TYPES_FOR_GROUP_ID = Object.freeze([
   OBJECT_TYPES.SERVICE,
   OBJECT_TYPES.BOOK,
 ] as const);
+
+export const WEIGHT_UNITS = Object.freeze(['kg', 'g', 'lb', 'oz'] as const);
+
+export const DIMENSION_UNITS = Object.freeze(['cm', 'm', 'in', 'ft'] as const);

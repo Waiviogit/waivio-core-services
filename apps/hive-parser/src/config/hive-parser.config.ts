@@ -38,4 +38,9 @@ export default () => ({
       },
     },
   },
+  userRestrictions: {
+    globalMuteAccounts: process.env.GLOBAL_MUTE_ACCOUNTS
+      ? process.env.GLOBAL_MUTE_ACCOUNTS.split(',').map((s) => s.trim())
+      : ['waivio'],
+  },
 });

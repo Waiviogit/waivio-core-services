@@ -41,4 +41,33 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
     });
     return result !== null;
   }
+
+  async appendField(
+    objectPermlink: string,
+    field: {
+      author: string;
+      name: string;
+      body: string;
+      locale: string;
+      creator: string;
+      transactionId: string;
+    },
+  ): Promise<void> {
+    await this.updateOne({
+      filter: { author_permlink: objectPermlink },
+      update: {
+        $push: {
+          fields: field,
+        },
+      },
+    });
+  }
+
+  async findOneByAuthorPermlink(
+    authorPermlink: string,
+  ): Promise<ObjectDocument | null> {
+    return this.findOne({
+      filter: { author_permlink: authorPermlink },
+    });
+  }
 }

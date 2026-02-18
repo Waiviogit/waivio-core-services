@@ -15,4 +15,12 @@ export class SpamUserRepository extends MongoRepository<SpamUserDocument> {
       new Logger(SpamUserRepository.name),
     );
   }
+
+  async isSpamUser(user: string): Promise<boolean> {
+    const result = await this.findOne({
+      filter: { user, isSpam: true },
+      projection: { _id: 1 },
+    });
+    return result !== null;
+  }
 }

@@ -15,4 +15,21 @@ export class MutedUserRepository extends MongoRepository<MutedUserDocument> {
       new Logger(MutedUserRepository.name),
     );
   }
+
+  async isMutedByGlobalAccounts(
+    userName: string,
+    globalMuteAccounts: string[],
+  ): Promise<boolean> {
+    if (globalMuteAccounts.length === 0) {
+      return false;
+    }
+    const result = await this.findOne({
+      filter: {
+        userName,
+        mutedBy: { $in: globalMuteAccounts },
+      },
+      projection: { _id: 1 },
+    });
+    return result !== null;
+  }
 }

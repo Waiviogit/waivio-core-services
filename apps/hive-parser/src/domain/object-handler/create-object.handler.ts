@@ -8,12 +8,16 @@ import {
   OBJECT_TYPES,
   OBJECT_TYPES_FOR_GROUP_ID,
 } from '@waivio-core-services/common';
+import { UserRestrictionService } from '../user-restrictions';
 
 @Injectable()
 export class CreateObjectHandler implements ObjectMethodHandler {
   private readonly logger = new Logger(CreateObjectHandler.name);
 
-  constructor(private readonly objectRepository: ObjectRepository) {}
+  constructor(
+    private readonly objectRepository: ObjectRepository,
+    private readonly userRestrictionService: UserRestrictionService,
+  ) {}
 
   async handle(
     operation: WaivioOperation,
@@ -21,6 +25,18 @@ export class CreateObjectHandler implements ObjectMethodHandler {
   ): Promise<void> {
     if (operation.method !== 'createObject') return;
     const { permlink, defaultName, creator, objectType } = operation.params;
+
+    // Check if author or creator is restricted (spam or muted)
+    const usersToCheck = new Set([ctx.account, creator]);
+    for (const user of usersToCheck) {
+      const isRestricted = await this.userRestrictionService.isRestricted(user);
+      if (isRestricted) {
+        this.logger.warn(
+          `User ${user} is restricted. Skipping object creation.`,
+        );
+        return;
+      }
+    }
 
     if (!(Object.values(OBJECT_TYPES) as string[]).includes(objectType)) {
       this.logger.warn(
