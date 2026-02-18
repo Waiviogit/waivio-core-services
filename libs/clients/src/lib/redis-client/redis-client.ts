@@ -132,7 +132,9 @@ export class RedisClientFactory
     for (const [db, wrapper] of this.clients) {
       this.logger.log(`Disconnecting Redis db:${db}`);
       disconnects.push(
-        (wrapper as unknown as { client: Redis }).client.quit().then(() => {}),
+        (wrapper as unknown as { client: Redis }).client
+          .quit()
+          .then(() => undefined),
       );
     }
     await Promise.all(disconnects);
