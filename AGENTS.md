@@ -13,7 +13,7 @@ This document defines the rules an agent must follow when working in this monore
 
 ### 2.1 Layering
 
-- Repository pattern is mandatory (base: `MongoRepository<TDocument>` in `@waivio-core/clients`).
+- Repository pattern is mandatory (base: `MongoRepository<TDocument>` in `@waivio-core-services/clients`).
 - App-specific repositories:
   - Location: `apps/<app>/src/repositories/`
   - Must extend the base repository where appropriate.
