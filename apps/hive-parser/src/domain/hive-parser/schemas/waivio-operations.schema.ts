@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { APP_LANGUAGES } from '@waivio-core-services/common';
 
 extendZodWithOpenApi(z);
 
@@ -19,6 +20,13 @@ const createObjectOp = z
       objectType: z.string().openapi({
         description: 'Type classification (e.g. restaurant, book, person)',
       }),
+      locale: z
+        .string()
+        .default('en-US')
+        .refine((val) => APP_LANGUAGES.includes(val), {
+          message: `Locale must be one of: ${APP_LANGUAGES.join(', ')}`,
+        })
+        .openapi({ description: 'Locale code (e.g. en-US)' }),
     }),
   })
   .openapi('CreateObject', { description: 'Creates a new Waivio object' });
@@ -33,7 +41,10 @@ const updateObjectOp = z
       name: z.string().openapi({ description: 'Field name to add or update' }),
       locale: z
         .string()
-        .optional()
+        .default('en-US')
+        .refine((val) => APP_LANGUAGES.includes(val), {
+          message: `Locale must be one of: ${APP_LANGUAGES.join(', ')}`,
+        })
         .openapi({ description: 'Locale code (e.g. en-US)' }),
       body: z.string().openapi({ description: 'Field value / content body' }),
       creator: z

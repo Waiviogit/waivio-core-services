@@ -33,4 +33,12 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
       },
     });
   }
+
+  async existsByAuthorPermlink(authorPermlink: string): Promise<boolean> {
+    const result = await this.findOne({
+      filter: { author_permlink: authorPermlink },
+      projection: { author_permlink: 1 },
+    });
+    return result !== null;
+  }
 }
