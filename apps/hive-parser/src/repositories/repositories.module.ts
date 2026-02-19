@@ -9,6 +9,7 @@ import { DepartmentRepository } from './department.repository';
 import { UserShopDeselectRepository } from './user-shop-deselect.repository';
 import { SpamUserRepository } from './spam-user.repository';
 import { MutedUserRepository } from './muted-user.repository';
+import { BlacklistRepository } from './blacklist.repository';
 
 @Module({
   providers: [
@@ -22,6 +23,7 @@ import { MutedUserRepository } from './muted-user.repository';
     UserShopDeselectRepository,
     SpamUserRepository,
     MutedUserRepository,
+    BlacklistRepository,
   ],
   exports: [
     AppRepository,
@@ -34,6 +36,7 @@ import { MutedUserRepository } from './muted-user.repository';
     UserShopDeselectRepository,
     SpamUserRepository,
     MutedUserRepository,
+    BlacklistRepository,
   ],
 })
 export class RepositoriesModule {}

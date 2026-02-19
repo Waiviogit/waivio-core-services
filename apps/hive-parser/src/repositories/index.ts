@@ -8,4 +8,5 @@ export * from './department.repository';
 export * from './user-shop-deselect.repository';
 export * from './spam-user.repository';
 export * from './muted-user.repository';
+export * from './blacklist.repository';
 export * from './repositories.module';

@@ -8,3 +8,4 @@ export * from './waivio/department.schema';
 export * from './waivio/user-shop-deselect.schema';
 export * from './waivio/spam-user.schema';
 export * from './waivio/muted-user.schema';
+export * from './waivio/blacklist.schema';
