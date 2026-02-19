@@ -18,7 +18,7 @@ export class HiveProcessorModule {
         BlockCacheService,
         HiveProcessorService,
       ],
-      exports: [HiveProcessorService],
+      exports: [HiveProcessorService, BlockCacheService],
     };
   }
 
@@ -41,7 +41,7 @@ export class HiveProcessorModule {
         BlockCacheService,
         HiveProcessorService,
       ],
-      exports: [HiveProcessorService],
+      exports: [HiveProcessorService, BlockCacheService],
     };
   }
 }

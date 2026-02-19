@@ -45,4 +45,10 @@ export default () => ({
   },
   masterAccount: process.env.MASTER_ACCOUNT || 'waivio',
   appHost: process.env.APP_HOST || 'waivio.com',
+  notificationsApi: {
+    ws: process.env.NOTIFICATIONS_API_WS || 'ws://localhost:3001',
+    baseUrl: process.env.NOTIFICATIONS_API_BASE_URL || '/notifications-api',
+    wsSetNotification: process.env.WS_SET_NOTIFICATION || 'setNotification',
+    apiKey: process.env.NOTIFICATIONS_API_KEY || '',
+  },
 });

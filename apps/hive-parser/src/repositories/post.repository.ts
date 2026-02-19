@@ -15,4 +15,13 @@ export class PostRepository extends MongoRepository<PostDocument> {
       new Logger(PostRepository.name),
     );
   }
+
+  async findOneByRootAuthorPermlink(
+    rootAuthor: string,
+    permlink: string,
+  ): Promise<PostDocument | null> {
+    return this.findOne({
+      filter: { root_author: rootAuthor, permlink },
+    });
+  }
 }

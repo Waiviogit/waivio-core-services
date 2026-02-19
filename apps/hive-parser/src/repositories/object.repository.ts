@@ -95,4 +95,11 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
       },
     });
   }
+
+  async findByMetaGroupId(metaGroupId: string): Promise<ObjectDocument[]> {
+    return this.find({
+      filter: { metaGroupId },
+      projection: { authority: 1 },
+    });
+  }
 }

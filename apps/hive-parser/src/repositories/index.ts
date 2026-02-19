@@ -9,4 +9,6 @@ export * from './user-shop-deselect.repository';
 export * from './spam-user.repository';
 export * from './muted-user.repository';
 export * from './blacklist.repository';
+export * from './comment.repository';
+export * from './user-expertise.repository';
 export * from './repositories.module';
