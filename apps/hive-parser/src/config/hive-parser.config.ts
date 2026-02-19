@@ -43,4 +43,5 @@ export default () => ({
       ? process.env.GLOBAL_MUTE_ACCOUNTS.split(',').map((s) => s.trim())
       : ['waivio'],
   },
+  masterAccount: process.env.MASTER_ACCOUNT || 'waivio',
 });

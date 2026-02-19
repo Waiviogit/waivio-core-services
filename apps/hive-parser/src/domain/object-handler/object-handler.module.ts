@@ -8,9 +8,15 @@ import { FieldWeightRecalcService } from './field-weight-recalc.service';
 import { ObjectHandlerService } from './object-handler.service';
 import { UpdateObjectValidatorService } from './update-object-validator.service';
 import { UserRestrictionsModule } from '../user-restrictions';
+import { ObjectProcessorIntegrationModule } from '../object-processor-integration';
 
 @Module({
-  imports: [RepositoriesModule, UtilsModule, UserRestrictionsModule],
+  imports: [
+    RepositoriesModule,
+    UtilsModule,
+    UserRestrictionsModule,
+    ObjectProcessorIntegrationModule, // Import the shared integration module
+  ],
   providers: [
     CreateObjectHandler,
     UpdateObjectHandler,

@@ -33,15 +33,11 @@ import { makeAffiliateLinks } from './makeAffiliateLinks';
 import {
   OBJECT_PROCESSOR_OPTIONS,
   ObjectProcessorModuleOptions,
+  FindParentsByPermlinkFn,
+  GetWaivioAdminsAndOwnerFn,
+  GetBlacklistFn,
+  GetObjectsByGroupIdFn,
 } from './object-processor.options';
-
-export type FindParentsByPermlinkFn =
-  ObjectProcessorModuleOptions['findParentsByPermlink'];
-export type GetWaivioAdminsAndOwnerFn =
-  ObjectProcessorModuleOptions['getWaivioAdminsAndOwner'];
-export type GetBlacklistFn = ObjectProcessorModuleOptions['getBlacklist'];
-export type GetObjectsByGroupIdFn =
-  ObjectProcessorModuleOptions['getObjectsByGroupId'];
 
 interface GetAssignedAdmins {
   admins: string[];
@@ -593,10 +589,12 @@ export class ObjectProcessorService {
   }
 
   getExposedFields(objectType: string, fields: Field[]): ExposedFieldCounter[] {
-    const exposedMap = new Map<string, number>(
+    const exposedFields =
       EXPOSED_FIELDS_FOR_OBJECT_TYPE[
         objectType as keyof typeof EXPOSED_FIELDS_FOR_OBJECT_TYPE
-      ].map((el) => [el, 0]),
+      ] || [];
+    const exposedMap = new Map<string, number>(
+      exposedFields.map((el: string) => [el, 0] as [string, number]),
     );
     if (exposedMap.has(FIELDS_NAMES.LIST_ITEM))
       exposedMap.set(LIST_TYPES.MENU_PAGE, 0);
@@ -937,10 +935,11 @@ export class ObjectProcessorService {
   async getParentInfo({ locale, app, parent }: GetParentInfo) {
     if (!parent) return '';
 
+    const parentWithoutParent = { ...parent, parent: '' } as Wobject;
     return this.processWobjects({
       locale,
       fields: REQUIREDFIELDS_PARENT,
-      wobjects: [_.omit(parent, 'parent')],
+      wobjects: [parentWithoutParent],
       returnArray: false,
       app,
     });

@@ -32,4 +32,11 @@ export class MutedUserRepository extends MongoRepository<MutedUserDocument> {
     });
     return result !== null;
   }
+
+  async findByMutedBy(mutedBy: string[]): Promise<MutedUserDocument[]> {
+    return this.find({
+      filter: { mutedBy: { $in: mutedBy } },
+      projection: { userName: 1 },
+    });
+  }
 }

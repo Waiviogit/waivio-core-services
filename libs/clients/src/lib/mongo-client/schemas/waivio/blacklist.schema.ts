@@ -39,9 +39,8 @@ BlacklistSchema.post('findOne', async function (doc: BlacklistDocument | null) {
     }).lean();
     // Original behavior: replace string array with lean document array
     // TypeScript note: This is a type mismatch, but matches original JS behavior
-    // Using Record<string, unknown>[] to represent lean documents
-    (doc as unknown as { followLists: Record<string, unknown>[] }).followLists =
-      followListDocs;
+    // Cast to any to bypass type checking for this runtime behavior
+    (doc as any).followLists = followListDocs;
   }
 });
 

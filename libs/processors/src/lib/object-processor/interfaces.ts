@@ -123,9 +123,12 @@ export interface OptionsMap {
 }
 
 // Wobject extends LeanObjectDocument with processing-related properties
-// Override fields and authority types, and activeCampaigns (from Types.ObjectId[] to string[])
+// Override fields, authority, activeCampaigns, and status types
 export interface Wobject
-  extends Omit<LeanObjectDocument, 'fields' | 'authority' | 'activeCampaigns'> {
+  extends Omit<
+    LeanObjectDocument,
+    'fields' | 'authority' | 'activeCampaigns' | 'status'
+  > {
   is_posting_open?: boolean;
   is_extending_open?: boolean;
   authority: Authority | Field;

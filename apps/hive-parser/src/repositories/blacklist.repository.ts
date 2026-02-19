@@ -75,4 +75,21 @@ export class BlacklistRepository extends MongoRepository<BlacklistDocument> {
 
     return false;
   }
+
+  async findByUsersWithProjection(
+    users: string[],
+    projection: { followLists?: number; blackList?: number },
+  ): Promise<BlacklistDocument[]> {
+    return this.find({
+      filter: { user: { $in: users } },
+      projection,
+    });
+  }
+
+  async findBlackListsByUsers(users: string[]): Promise<BlacklistDocument[]> {
+    return this.find({
+      filter: { user: { $in: users } },
+      projection: { blackList: 1 },
+    });
+  }
 }
