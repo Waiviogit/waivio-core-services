@@ -770,6 +770,7 @@ export class ObjectProcessorService {
       // Handle blacklist filtering and weight recalculation
       if (
         hasBlacklist &&
+        field.active_votes &&
         !_.isEmpty(field.active_votes) &&
         field.name !== FIELDS_NAMES.AUTHORITY &&
         field.active_votes.some((v) => blacklist.includes(v.voter))

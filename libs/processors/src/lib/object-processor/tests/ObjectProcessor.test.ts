@@ -458,6 +458,15 @@ describe('ObjectProcessorService', () => {
       'dataoperator',
     ],
     authority: ['waivio', 'waivio.affiliate'],
+    beneficiary: {
+      account: 'waivio',
+      percent: 500,
+    },
+    configuration: {},
+    host: 'waivio.com',
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   describe('processWobjects', () => {
@@ -787,8 +796,9 @@ describe('ObjectProcessorService', () => {
         blacklist: ['blacklisted_user'],
       });
 
+      expect(result[0].active_votes).toBeDefined();
       expect(result[0].active_votes).toHaveLength(1);
-      expect(result[0].active_votes[0].voter).toBe('user1');
+      expect(result[0].active_votes?.[0]?.voter).toBe('user1');
       expect(result[0].weight).toBe(3); // 2 (weight) + 1 (weightWAIV)
     });
 

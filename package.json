@@ -5,6 +5,7 @@
   "scripts": {
     "start:hive-parser": "npx nx serve hive-parser",
     "docs:hive-parser": "ts-node -r tsconfig-paths/register apps/hive-parser/scripts/generate-docs.ts",
+    "lint:test:build": "npx nx run-many -t lint test build",
     "prepare": "husky"
   },
   "private": true,

@@ -6,6 +6,8 @@ describe('makeAffiliateLinks', () => {
     _id: { getTimestamp: () => Date.now() },
     name: 'productId',
     body: JSON.stringify({ productId: '123', productIdType: 'amazon' }),
+    id: 'test-id',
+    transactionId: 'test-transaction-id',
     weight: 1,
     locale: 'en',
     creator: 'test',
