@@ -1,0 +1,43 @@
+# Stage 1: Build the application
+FROM node:24.12.0-alpine3.23 AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY nx.json ./
+COPY tsconfig.base.json ./
+
+# Copy workspace structure
+COPY apps/hive-parser ./apps/hive-parser
+COPY libs ./libs
+
+# Install dependencies (for building)
+RUN npm ci
+
+# Build the application (this automatically generates dist/apps/hive-parser/package.json)
+# Webpack analyzes imports and includes ONLY packages that are actually used
+RUN npx nx build hive-parser
+
+# Generate package-lock.json for reproducible Docker builds
+RUN npx nx run hive-parser:generate-lockfile
+
+# Stage 2: Production image
+FROM node:24.12.0-alpine3.23 AS production
+
+WORKDIR /app
+
+# Copy only the built application and its dependencies
+COPY --from=builder /app/dist/apps/hive-parser ./
+COPY --from=builder /app/dist/apps/hive-parser/package.json ./
+COPY --from=builder /app/dist/apps/hive-parser/package-lock.json ./
+
+# Install only production dependencies (minimal set)
+# Use --omit=dev instead of deprecated --only=production
+RUN npm ci --omit=dev && \
+    npm cache clean --force && \
+    rm -rf /tmp/* /var/tmp/* && \
+    rm -rf /root/.npm
+
+# Run the application
+CMD ["node", "main.js"]

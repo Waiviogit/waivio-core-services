@@ -196,8 +196,8 @@ Each project (app/lib) can generate its own `package.json`:
 # Build (generates package.json automatically)
 nx build hive-parser
 
-# Optional: Prune for Docker
-nx run hive-parser:prune-lockfile
+# Optional: Generate lockfile for Docker
+nx run hive-parser:generate-lockfile
 
 # Docker: dist/apps/hive-parser/ contains everything needed
 cd dist/apps/hive-parser
@@ -205,7 +205,17 @@ npm ci --only=production
 node main.js
 ```
 
-See `apps/<app>/Dockerfile.example` for complete multi-stage Docker setup.
+**Docker build:**
+
+```bash
+# Build Docker image
+docker build -f apps/<app>/Dockerfile -t <app>:latest .
+
+# Run container
+docker run <app>:latest
+```
+
+See `apps/<app>/Dockerfile` for the actual Dockerfile (Node.js 24.12.0-alpine3.23).
 
 ### 5.4 Dependency management rules
 
