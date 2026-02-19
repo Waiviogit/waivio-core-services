@@ -15,12 +15,14 @@
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@types/ws": "^8.18.1",
     "axios": "^1.6.0",
     "ioredis": "^5.9.3",
     "lodash": "^4.17.23",
     "mongoose": "^9.2.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
+    "ws": "^8.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
