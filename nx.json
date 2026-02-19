@@ -43,9 +43,18 @@
     }
   ],
   "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
     "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "prune-lockfile": {
+      "dependsOn": ["build"],
       "inputs": ["production", "^production"]
     }
   }

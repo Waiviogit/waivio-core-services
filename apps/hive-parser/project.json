@@ -4,6 +4,7 @@
   "sourceRoot": "apps/hive-parser/src",
   "projectType": "application",
   "tags": [],
+  "implicitDependencies": ["clients", "common", "processors"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
@@ -18,16 +19,14 @@
         }
       }
     },
-    "prune-lockfile": {
+    "generate-lockfile": {
       "dependsOn": ["build"],
       "cache": true,
-      "executor": "@nx/js:prune-lockfile",
-      "outputs": [
-        "{workspaceRoot}/dist/apps/hive-parser/package.json",
-        "{workspaceRoot}/dist/apps/hive-parser/package-lock.json"
-      ],
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/hive-parser/package-lock.json"],
       "options": {
-        "buildTarget": "build"
+        "command": "cd dist/apps/hive-parser && npm install --package-lock-only --no-save",
+        "cwd": "{workspaceRoot}"
       }
     },
     "copy-workspace-modules": {
@@ -40,7 +39,7 @@
       }
     },
     "prune": {
-      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+      "dependsOn": ["generate-lockfile", "copy-workspace-modules"],
       "executor": "nx:noop"
     },
     "serve": {

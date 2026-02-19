@@ -4,6 +4,17 @@
   "sourceRoot": "libs/common/src",
   "projectType": "library",
   "tags": [],
-  "// targets": "to see all targets run: nx show project common --web",
-  "targets": {}
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/common",
+        "main": "libs/common/src/index.ts",
+        "tsConfig": "libs/common/tsconfig.lib.json",
+        "assets": [],
+        "generatePackageJson": true
+      }
+    }
+  }
 }

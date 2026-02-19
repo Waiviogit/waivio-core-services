@@ -108,15 +108,131 @@ Indexing rules:
 
 ## 5. Package management
 
-- Single root `package.json` (Nx monorepo).
-- Use `npm install` / `npm update`.
+### 5.1 Root-level dependencies
+
+- Single root `package.json` (Nx monorepo) for development.
+- Use `npm install` / `npm update` at workspace root.
 - Never manually write versions into `package.json`.
-- All dependencies managed at root level.
+- Shared dependencies managed at root level.
 - Keep dependency graph minimal.
 
-Key runtime deps:
+**Key runtime dependencies (shared at root):**
 
-- `@nestjs/*`, `mongoose`, `ioredis`, `@hiveio/dhive`, `zod`, `rxjs`
+- `@nestjs/*`, `mongoose`, `ioredis`, `@hiveio/dhive`, `zod`, `rxjs`, `ws`, `lodash`, `axios`
+
+### 5.2 Project-level dependencies
+
+Each project (app/lib) can generate its own `package.json`:
+
+- **Libraries**:
+  - Libraries with workspace dependencies (e.g., `clients` depends on `common`) are bundled by apps during app builds
+  - Standalone libraries without dependencies (e.g., `common`) can have build targets with `generatePackageJson: true`
+  - Libraries are not built separately - they're included in app builds via webpack bundling
+  - Generated `package.json` for apps includes all workspace library dependencies
+- **Applications**:
+  - Webpack generates `package.json` automatically during build
+  - Generated files appear in `dist/apps/<app-name>/`
+  - Use `prune-lockfile` target to generate minimal dependencies for deployment
+  - App builds automatically include and bundle dependent libraries
+
+**Project dependency graph (declared in `project.json`):**
+
+- `hive-parser` → depends on: `clients`, `common`, `processors`
+- `processors` → depends on: `clients`, `common`
+- `clients` → depends on: `common`
+- `common` → no internal dependencies
+
+**Implicit dependencies:**
+
+- Declared via `implicitDependencies` in each project's `project.json`
+- Helps Nx understand the project graph for:
+  - Build ordering (`dependsOn: ["^build"]`)
+  - Affected calculations
+  - Caching strategies
+- Nx automatically builds dependencies before dependents
+
+### 5.3 Dependency pruning for deployment
+
+**For applications:**
+
+- **Automatic**: Webpack generates `package.json` automatically during `nx build <app>`
+  - Only includes packages that are actually imported/used in the code
+  - Unused packages from root `package.json` are automatically excluded
+  - Generated file: `dist/apps/<app>/package.json`
+- **Lockfile** (optional): Use `nx run <app>:generate-lockfile` for reproducible Docker builds
+  - Generates `package-lock.json` from the webpack-generated `package.json`
+  - Ensures consistent dependency versions in Docker
+  - Generated file: `dist/apps/<app>/package-lock.json`
+
+**For libraries:**
+
+- Build generates `package.json` with only required dependencies
+- Use for publishing or bundling libraries separately
+
+**Commands:**
+
+- `nx build <app>` - Builds app and auto-generates `package.json` (includes only used packages)
+- `nx run <app>:generate-lockfile` - Generates `package-lock.json` for reproducible Docker builds (optional)
+- `nx run <app>:prune` - Runs both `generate-lockfile` and `copy-workspace-modules`
+
+**Docker workflow:**
+
+1. **Build**: `nx build <app>`
+   - ✅ Automatically generates `dist/apps/<app>/package.json`
+   - ✅ Only includes packages that are actually imported/used
+   - ✅ Unused packages are automatically excluded
+   - ✅ No manual `package.json` creation needed!
+
+2. **Lockfile** (optional): `nx run <app>:generate-lockfile`
+   - Generates `package-lock.json` from the webpack-generated `package.json`
+   - Ensures consistent dependency versions in Docker
+   - Recommended for production Docker builds
+
+3. **Docker**: Copy `dist/apps/<app>/` directory and run `npm ci --only=production`
+
+**Example:**
+
+```bash
+# Build (generates package.json automatically)
+nx build hive-parser
+
+# Optional: Prune for Docker
+nx run hive-parser:prune-lockfile
+
+# Docker: dist/apps/hive-parser/ contains everything needed
+cd dist/apps/hive-parser
+npm ci --only=production
+node main.js
+```
+
+See `apps/<app>/Dockerfile.example` for complete multi-stage Docker setup.
+
+### 5.4 Dependency management rules
+
+**Development:**
+
+- Use root `node_modules` for all development work
+- Install new dependencies at root: `npm install <package>`
+- Nx resolves dependencies from root during development
+
+**Production/Deployment:**
+
+- Use generated `package.json` files from `dist/` directories
+- Run `npm install --production` in `dist/apps/<app>/` for deployment
+- Each app/lib can be deployed independently with minimal dependencies
+
+**Adding new dependencies:**
+
+1. Install at root: `npm install <package>`
+2. If app-specific, document in project README or comments
+3. Build will automatically include in generated `package.json` if used
+4. For deployment, use `prune-lockfile` to generate minimal set
+
+**Version conflicts:**
+
+- Monitor for version mismatches between root and project-level
+- Prefer resolving at root level when possible
+- Use project-level only when necessary for deployment isolation
 
 ## 6. Type safety and validation
 
@@ -229,13 +345,57 @@ Commands:
 
 ## 15. Build and run
 
-- Build: `nx build <project>` (uses webpack via `@nx/webpack`)
+### 15.1 Building projects
+
+**Libraries:**
+
+- `nx build <lib>` - Builds library using `@nx/js:tsc` executor
+- Generates `package.json` automatically if `generatePackageJson: true` is set
+- Output: `dist/libs/<lib-name>/`
+- Dependencies: Automatically builds dependent libs first (`dependsOn: ["^build"]`)
+- **Note**: Libraries with workspace dependencies (e.g., `clients` depends on `common`) are typically built as part of app builds. Standalone library builds work best for libraries without workspace dependencies.
+
+**Applications:**
+
+- `nx build <app>` - Builds app using webpack via `@nx/webpack`
+- Generates `package.json` automatically via webpack config
+- Output: `dist/apps/<app-name>/`
+- Dependencies: Automatically builds dependent libs first
+
+**Build order:**
+
+- Nx automatically determines build order based on `implicitDependencies`
+- Example: Building `hive-parser` will build `common` → `clients` → `processors` → `hive-parser`
+
+### 15.2 Development
+
 - Dev: `nx serve <project>` (continuous mode with watch)
-- Prod: `node dist/apps/<app>/main`
-- Each app has its own `tsconfig.app.json` extending root `tsconfig.base.json`.
-- Each lib has its own `tsconfig.lib.json`.
-- Project configuration in `project.json` (targets: build, serve, test, lint).
-- Use `nx run <project>:<target>` for explicit target execution.
+- Uses root `node_modules` for all dependencies
+- Hot reload enabled for apps
+
+### 15.3 Production
+
+**Build and deploy:**
+
+- Build: `nx build <app>` (production build)
+  - Automatically generates `dist/apps/<app>/package.json` with only used packages
+  - No manual `package.json` creation needed
+  - Unused packages are automatically excluded
+- Prune dependencies: `nx run <app>:prune-lockfile` (optional, for Docker optimization)
+  - Generates minimal `package.json` + `package-lock.json`
+  - Recommended for Docker images to minimize size
+- Deploy: `cd dist/apps/<app> && npm ci --only=production && node main`
+- Docker: See `apps/<app>/Dockerfile.example` for multi-stage build setup
+
+**Key points:**
+
+- ✅ No manual `package.json` creation - webpack generates it automatically
+- ✅ Only imported/used packages are included - unused packages excluded automatically
+- ✅ Perfect for Docker - minimal dependencies = smaller images
+- ✅ Each app has its own `tsconfig.app.json` extending root `tsconfig.base.json`
+- ✅ Each lib has its own `tsconfig.lib.json`
+- ✅ Project configuration in `project.json` (targets: build, serve, test, lint)
+- ✅ Use `nx run <project>:<target>` for explicit target execution
 
 ## 16. Git and changes
 
