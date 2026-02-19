@@ -8,6 +8,7 @@ export const hiveParserConfigSchema = z.object({
   REDIS_URI: z.string().optional().default('redis://localhost:6379'),
   START_BLOCK_NUMBER: z.coerce.number().optional().default(102138605),
   BLOCK_NUMBER_KEY: z.string().optional().default('hiveParser:blockNumber'),
+  APP_HOST: z.string().optional().default('waivio.com'),
 });
 
 export type HiveParserConfig = z.infer<typeof hiveParserConfigSchema>;

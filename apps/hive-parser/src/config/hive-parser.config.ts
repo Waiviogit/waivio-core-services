@@ -44,4 +44,5 @@ export default () => ({
       : ['waivio'],
   },
   masterAccount: process.env.MASTER_ACCOUNT || 'waivio',
+  appHost: process.env.APP_HOST || 'waivio.com',
 });
