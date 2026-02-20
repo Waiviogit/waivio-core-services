@@ -12,6 +12,8 @@ import { UserRestrictionsModule } from '../user-restrictions';
 import { ObjectProcessorIntegrationModule } from '../object-processor-integration';
 import { NotificationsModule } from '../notifications';
 import { CacheModule } from '../cache';
+import { ImportUpdatesModule } from '../import-updates';
+import { WaivioApiModule } from '../waivio-api';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -22,6 +24,8 @@ import { ConfigModule } from '@nestjs/config';
     ObjectProcessorIntegrationModule, // Import the shared integration module
     NotificationsModule,
     CacheModule,
+    ImportUpdatesModule,
+    WaivioApiModule,
     ConfigModule,
   ],
   providers: [

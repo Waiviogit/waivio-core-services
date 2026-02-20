@@ -81,6 +81,14 @@ class RedisClientWrapper implements RedisClientInterface {
     await this.client.expire(key, ttlSeconds);
   }
 
+  async zIncrBy(
+    key: string,
+    increment: number,
+    member: string,
+  ): Promise<number> {
+    return Number(await this.client.zincrby(key, increment, member));
+  }
+
   pipeline(): RedisPipelineInterface {
     return new RedisPipelineWrapper(this.client.pipeline());
   }

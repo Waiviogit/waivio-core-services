@@ -20,6 +20,7 @@ export default () => ({
   },
   redis: {
     uri: process.env.REDIS_URI,
+    tagCategories: parseInt(process.env.REDIS_TAG_CATEGORIES_DB || '9', 10),
   },
   hive: {
     startBlockNumber: parseInt(
@@ -50,5 +51,19 @@ export default () => ({
     baseUrl: process.env.NOTIFICATIONS_API_BASE_URL || '/notifications-api',
     wsSetNotification: process.env.WS_SET_NOTIFICATION || 'setNotification',
     apiKey: process.env.NOTIFICATIONS_API_KEY || '',
+  },
+  importUpdates: {
+    enabled: process.env.IMPORT_UPDATES_ENABLED === 'true',
+    host: process.env.IMPORT_OBJECTS_SERVICE_HOST_URL || '',
+    route: process.env.IMPORT_UPDATES_ROUTE || '',
+    apiKey: process.env.API_KEY || '',
+  },
+  waivioApi: {
+    host: process.env.WAIVIO_API_HOST || '',
+    baseUrl: process.env.WAIVIO_API_BASE_URL || '',
+    recountListItems:
+      process.env.WAIVIO_API_RECOUNT_LIST_ITEMS ||
+      '/wobjects/list-item-process',
+    serviceApiKey: process.env.SERVICE_API_KEY || '',
   },
 });

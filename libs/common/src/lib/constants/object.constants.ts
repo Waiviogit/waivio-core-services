@@ -258,6 +258,12 @@ export const OBJECT_TYPES = Object.freeze({
   HTML: 'html',
 } as const);
 
+export const CREATE_TAGS_ON_UPDATE_TYPES = [
+  OBJECT_TYPES.RESTAURANT,
+  OBJECT_TYPES.DRINK,
+  OBJECT_TYPES.DISH,
+] as const;
+
 export const REQUIREDFIELDS_PARENT = [
   FIELDS_NAMES.NAME,
   FIELDS_NAMES.AVATAR,

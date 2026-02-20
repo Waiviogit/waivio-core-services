@@ -15,6 +15,7 @@ export interface RedisClientInterface {
   hGetAll(key: string): Promise<Record<string, string>>;
   hIncrBy(key: string, field: string, increment: number): Promise<void>;
   expire(key: string, ttlSeconds: number): Promise<void>;
+  zIncrBy(key: string, increment: number, member: string): Promise<number>;
   pipeline(): RedisPipelineInterface;
   publish(channel: string, message: string): Promise<void>;
 }

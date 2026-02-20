@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RedisClientFactory } from '@waivio-core-services/clients';
 import type { RedisClientInterface } from '@waivio-core-services/clients';
 
@@ -6,10 +7,19 @@ import type { RedisClientInterface } from '@waivio-core-services/clients';
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
   private readonly client: RedisClientInterface;
+  private readonly tagCategoriesClient: RedisClientInterface;
 
-  constructor(private readonly redisClientFactory: RedisClientFactory) {
+  constructor(
+    private readonly redisClientFactory: RedisClientFactory,
+    private readonly configService: ConfigService,
+  ) {
     // Use default database (0) for cache
     this.client = this.redisClientFactory.getClient(0);
+    // Use separate database for tag categories
+    const tagCategoriesDb =
+      this.configService.get<number>('redis.tagCategories') ?? 9;
+    this.tagCategoriesClient =
+      this.redisClientFactory.getClient(tagCategoriesDb);
   }
 
   /**
@@ -137,6 +147,50 @@ export class CacheService {
     } catch (error) {
       this.logger.error(
         `Failed to set expiration for key "${key}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Increment the score of a member in a sorted set
+   * @param key The sorted set key
+   * @param increment The increment value
+   * @param member The member to increment
+   * @returns The new score of the member
+   */
+  async zIncrBy(
+    key: string,
+    increment: number,
+    member: string,
+  ): Promise<number> {
+    try {
+      return await this.client.zIncrBy(key, increment, member);
+    } catch (error) {
+      this.logger.error(
+        `Failed to increment sorted set member "${member}" in key "${key}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Increment the score of a member in a sorted set using tag categories client
+   * @param key The sorted set key
+   * @param increment The increment value
+   * @param member The member to increment
+   * @returns The new score of the member
+   */
+  async zIncrByTagCategory(
+    key: string,
+    increment: number,
+    member: string,
+  ): Promise<number> {
+    try {
+      return await this.tagCategoriesClient.zIncrBy(key, increment, member);
+    } catch (error) {
+      this.logger.error(
+        `Failed to increment tag category sorted set member "${member}" in key "${key}": ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }

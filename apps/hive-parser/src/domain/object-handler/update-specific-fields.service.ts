@@ -13,11 +13,16 @@ import {
   TAG_CLOUDS_UPDATE_COUNT,
   RATINGS_UPDATE_COUNT,
   SUPPOSED_UPDATES_BY_TYPE,
+  CREATE_TAGS_ON_UPDATE_TYPES,
+  OBJECT_TYPES,
+  JsonHelper,
+  getPermlink,
 } from '@waivio-core-services/common';
 import { ObjectProcessorService } from '@waivio-core-services/processors';
 import { NotificationsService } from '../notifications';
 import { CacheService } from '../cache';
-import { JsonHelper } from '@waivio-core-services/common';
+import { ImportUpdatesService } from '../import-updates';
+import { ListItemProcessService } from '../waivio-api';
 import { validateMap } from './helpers/specified-fields-validator';
 import type {
   ObjectField,
@@ -47,6 +52,8 @@ export class UpdateSpecificFieldsService {
     private readonly notificationsService: NotificationsService,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
+    private readonly importUpdatesService: ImportUpdatesService,
+    private readonly listItemProcessService: ListItemProcessService,
   ) {}
 
   /**
@@ -443,11 +450,245 @@ export class UpdateSpecificFieldsService {
     field: ObjectField;
     app: App;
   }): Promise<void> {
-    // TODO: Implement tags creation - requires tagsParser service
-    // This is used for restaurant/dish/drink object types
-    this.logger.debug(
-      `createTags not yet implemented for ${params.field.name} on ${params.objectPermlink}`,
+    const locale = params.field.locale;
+    if (locale !== 'en-US') return;
+
+    const wobject = await this.objectRepository.findOneByAuthorPermlink(
+      params.objectPermlink,
     );
+    if (!wobject) return;
+
+    const hasNameField = wobject.fields.some(
+      (f) => f.name === FIELDS_NAMES.NAME,
+    );
+    if (!hasNameField) return;
+
+    if (
+      !CREATE_TAGS_ON_UPDATE_TYPES.includes(
+        wobject.object_type as (typeof CREATE_TAGS_ON_UPDATE_TYPES)[number],
+      )
+    ) {
+      return;
+    }
+
+    const supposedUpdate =
+      SUPPOSED_UPDATES_BY_TYPE[
+        wobject.object_type as keyof typeof SUPPOSED_UPDATES_BY_TYPE
+      ];
+    if (!supposedUpdate) return;
+
+    const tagCategoriesUpdate = supposedUpdate.find(
+      (u) => u.name === 'tagCategory',
+    );
+    if (!tagCategoriesUpdate) return;
+
+    const appDoc = await this.appRepository.findOne({
+      filter: {
+        host: this.configService.get<string>('appHost') || 'waivio.com',
+      },
+    });
+    if (!appDoc || !appDoc.tagsData) return;
+
+    const tagsSource = appDoc.tagsData as Record<
+      string,
+      Record<string, string>
+    >;
+    const appends: Array<{
+      name: string;
+      body: string;
+      id: string;
+      permlink: string;
+      locale: string;
+      creator: string;
+      tagCategory?: string;
+    }> = [];
+
+    if (
+      wobject.object_type === OBJECT_TYPES.RESTAURANT ||
+      wobject.object_type === OBJECT_TYPES.DRINK ||
+      wobject.object_type === OBJECT_TYPES.DISH
+    ) {
+      for (const tag of tagCategoriesUpdate.values) {
+        const tagCategory = wobject.fields.find(
+          (f) => f.name === FIELDS_NAMES.TAG_CATEGORY && f.body === tag,
+        );
+
+        const parsed = this.parseIngredients({
+          string: params.field.body,
+          authorPermlink: params.objectPermlink,
+          fields: wobject.fields,
+          id: tagCategory?.id,
+          tag,
+          tagsSource: tagsSource[tag],
+        });
+
+        appends.push(...parsed);
+      }
+    }
+
+    if (appends.length > 0) {
+      const result = await this.importUpdatesService.send([
+        {
+          object_type: wobject.object_type,
+          author_permlink: params.objectPermlink,
+          fields: appends,
+        },
+      ]);
+
+      if (result.error) {
+        this.logger.warn(
+          `Failed to send import updates: ${result.error.message}`,
+        );
+      }
+    }
+  }
+
+  private createTag(params: {
+    body: string;
+    authorPermlink: string;
+    name: string;
+    id?: string;
+    tag?: string;
+  }): {
+    name: string;
+    body: string;
+    id: string;
+    permlink: string;
+    locale: string;
+    creator: string;
+    tagCategory?: string;
+  } {
+    const id = params.id || randomUUID();
+    const field: {
+      name: string;
+      body: string;
+      id: string;
+      permlink: string;
+      locale: string;
+      creator: string;
+      tagCategory?: string;
+    } = {
+      name: params.name,
+      body: params.body,
+      id,
+      permlink: getPermlink(
+        params.authorPermlink,
+        params.id ? 'category-item' : 'tag-category',
+      ),
+      locale: 'en-US',
+      creator: 'asd09', // TODO: Get from config or context
+    };
+
+    if (params.id && params.tag) {
+      field.tagCategory = params.tag;
+    }
+
+    return field;
+  }
+
+  private parseIngredients(params: {
+    string: string;
+    authorPermlink: string;
+    fields: ObjectField[];
+    id?: string;
+    tag: string;
+    tagsSource?: Record<string, string>;
+  }): Array<{
+    name: string;
+    body: string;
+    id: string;
+    permlink: string;
+    locale: string;
+    creator: string;
+    tagCategory?: string;
+  }> {
+    const appends: Array<{
+      name: string;
+      body: string;
+      id: string;
+      permlink: string;
+      locale: string;
+      creator: string;
+      tagCategory?: string;
+    }> = [];
+    let newId: string | undefined;
+    if (!params.id) {
+      newId = randomUUID();
+    }
+
+    if (!params.tagsSource) return appends;
+
+    try {
+      for (const key of Object.keys(params.tagsSource)) {
+        const regexp = new RegExp(`\\b(${key.toLowerCase()})\\b`, 'g');
+        const testString = params.string.toString().toLowerCase();
+        const tagValue = params.tagsSource[key];
+
+        if (
+          regexp.test(testString) &&
+          !params.fields.find(
+            (f) => f.name === FIELDS_NAMES.CATEGORY_ITEM && f.body === tagValue,
+          )
+        ) {
+          appends.push(
+            this.createTag({
+              name: FIELDS_NAMES.CATEGORY_ITEM,
+              body: tagValue,
+              id: params.id || newId,
+              authorPermlink: params.authorPermlink,
+              tag: params.tag,
+            }),
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error parsing ingredients: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return [];
+    }
+
+    if (appends.length > 0 && !params.id && newId) {
+      const tagCategory = this.createTag({
+        name: FIELDS_NAMES.TAG_CATEGORY,
+        body: params.tag,
+        authorPermlink: params.authorPermlink,
+        id: newId,
+      });
+      appends.unshift(tagCategory);
+    }
+
+    return appends;
+  }
+
+  private async incrementTag(params: {
+    categoryName: string;
+    tag: string;
+    objectType: string;
+  }): Promise<void> {
+    const key = `${FIELDS_NAMES.TAG_CATEGORY}:${params.objectType}:${params.categoryName}`;
+    try {
+      await this.cacheService.zIncrByTagCategory(key, 1, params.tag);
+    } catch (error) {
+      this.logger.error(
+        `Failed to increment tag "${params.tag}" in category "${params.categoryName}" for object type "${params.objectType}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async incrementDepartmentTag(params: {
+    categoryName: string;
+    tag: string;
+    department: string;
+  }): Promise<void> {
+    const key = `${FIELDS_NAMES.DEPARTMENTS}:${params.department}:${params.categoryName}`;
+    try {
+      await this.cacheService.zIncrByTagCategory(key, 1, params.tag);
+    } catch (error) {
+      this.logger.error(
+        `Failed to increment department tag "${params.tag}" in category "${params.categoryName}" for department "${params.department}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   private async processingParent(
@@ -679,10 +920,16 @@ export class UpdateSpecificFieldsService {
     });
 
     if (wobject) {
-      // TODO: Implement listItemProcess.send - requires external service
-      this.logger.debug(
-        `listItemProcess.send not yet implemented for ${authorPermlink}`,
-      );
+      const result = await this.listItemProcessService.send({
+        authorPermlink,
+        listItemLink: '',
+      });
+
+      if (result.error) {
+        this.logger.warn(
+          `Failed to send list item process request for ${authorPermlink}: ${result.error.message}`,
+        );
+      }
     }
   }
 
@@ -698,19 +945,21 @@ export class UpdateSpecificFieldsService {
     const supposedUpdates = this.getTagCategoryToUpdate(wobject.object_type);
     if (!supposedUpdates.includes(params.field.tagCategory || '')) return;
 
-    // TODO: Implement incrementTag - requires Redis sorted sets support
-    this.logger.debug(
-      `incrementTag not yet implemented for ${params.field.tagCategory}`,
-    );
+    await this.incrementTag({
+      categoryName: params.field.tagCategory || '',
+      tag: params.field.body,
+      objectType: wobject.object_type,
+    });
 
     const departments = (wobject as any).departments as string[] | undefined;
     if (!departments || departments.length === 0) return;
 
     for (const department of departments) {
-      // TODO: Implement incrementDepartmentTag - requires Redis sorted sets support
-      this.logger.debug(
-        `incrementDepartmentTag not yet implemented for ${department}`,
-      );
+      await this.incrementDepartmentTag({
+        categoryName: params.field.tagCategory || '',
+        tag: params.field.body,
+        department,
+      });
     }
   }
 
@@ -864,10 +1113,11 @@ export class UpdateSpecificFieldsService {
     );
 
     for (const tagField of tagFields) {
-      // TODO: Implement incrementDepartmentTag - requires Redis sorted sets support
-      this.logger.debug(
-        `incrementDepartmentTag not yet implemented for ${tagField.tagCategory}`,
-      );
+      await this.incrementDepartmentTag({
+        categoryName: tagField.tagCategory || '',
+        tag: tagField.body,
+        department: department.name,
+      });
     }
   }
 
@@ -971,9 +1221,15 @@ export class UpdateSpecificFieldsService {
     field: ObjectField;
     objectPermlink: string;
   }): Promise<void> {
-    // TODO: Implement listItemProcess.send - requires external service
-    this.logger.debug(
-      `listItemProcess.send not yet implemented for ${params.objectPermlink}`,
-    );
+    const result = await this.listItemProcessService.send({
+      authorPermlink: params.objectPermlink,
+      listItemLink: params.field.body,
+    });
+
+    if (result.error) {
+      this.logger.warn(
+        `Failed to send list item process request: ${result.error.message}`,
+      );
+    }
   }
 }
