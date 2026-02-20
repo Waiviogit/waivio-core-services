@@ -6,6 +6,7 @@ import { UserRepository } from './user.repository';
 import { PostRepository } from './post.repository';
 import { DepartmentRepository } from './department.repository';
 import { UserShopDeselectRepository } from './user-shop-deselect.repository';
+import { WobjectPendingUpdateRepository } from './wobject-pending-update.repository';
 import { SpamUserRepository } from './spam-user.repository';
 import { MutedUserRepository } from './muted-user.repository';
 import { BlacklistRepository } from './blacklist.repository';
@@ -26,6 +27,7 @@ import { UserExpertiseRepository } from './user-expertise.repository';
     BlacklistRepository,
     CommentRepository,
     UserExpertiseRepository,
+    WobjectPendingUpdateRepository,
   ],
   exports: [
     AppRepository,
@@ -40,6 +42,7 @@ import { UserExpertiseRepository } from './user-expertise.repository';
     BlacklistRepository,
     CommentRepository,
     UserExpertiseRepository,
+    WobjectPendingUpdateRepository,
   ],
 })
 export class RepositoriesModule {}

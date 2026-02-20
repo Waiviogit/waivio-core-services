@@ -10,3 +10,4 @@ export * from './waivio/muted-user.schema';
 export * from './waivio/blacklist.schema';
 export * from './waivio/comment.schema';
 export * from './waivio/user-expertise.schema';
+export * from './waivio/wobject-pending-update.schema';

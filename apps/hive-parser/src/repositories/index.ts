@@ -5,6 +5,7 @@ export * from './user.repository';
 export * from './post.repository';
 export * from './department.repository';
 export * from './user-shop-deselect.repository';
+export * from './wobject-pending-update.repository';
 export * from './spam-user.repository';
 export * from './muted-user.repository';
 export * from './blacklist.repository';

@@ -197,6 +197,22 @@ export class CacheService {
   }
 
   /**
+   * Publish a message to a Redis channel
+   * @param channel The channel name
+   * @param message The message to publish
+   */
+  async publish(channel: string, message: string): Promise<void> {
+    try {
+      await this.client.publish(channel, message);
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish message to channel "${channel}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Get a client for a specific database
    * Useful when you need to use a different Redis database
    */

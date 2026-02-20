@@ -7,8 +7,13 @@ import type { ObjectDocument } from '@waivio-core-services/clients';
 import {
   OBJECT_TYPES,
   OBJECT_TYPES_FOR_GROUP_ID,
+  SUPPOSED_UPDATES_BY_TYPE,
+  SUPPOSED_UPDATES_TRANSLATIONS,
+  getPermlink,
 } from '@waivio-core-services/common';
 import { UserRestrictionService } from '../user-restrictions';
+import { ImportUpdatesService } from '../import-updates';
+import { CacheService } from '../cache';
 
 @Injectable()
 export class CreateObjectHandler implements ObjectMethodHandler {
@@ -17,6 +22,8 @@ export class CreateObjectHandler implements ObjectMethodHandler {
   constructor(
     private readonly objectRepository: ObjectRepository,
     private readonly userRestrictionService: UserRestrictionService,
+    private readonly importUpdatesService: ImportUpdatesService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async handle(
@@ -24,7 +31,8 @@ export class CreateObjectHandler implements ObjectMethodHandler {
     ctx: ObjectMethodContext,
   ): Promise<void> {
     if (operation.method !== 'createObject') return;
-    const { permlink, defaultName, creator, objectType } = operation.params;
+    const { permlink, defaultName, creator, objectType, importId } =
+      operation.params;
 
     // Check if author or creator is restricted (spam or muted)
     const usersToCheck = new Set([ctx.account, creator]);
@@ -69,6 +77,148 @@ export class CreateObjectHandler implements ObjectMethodHandler {
       createData.metaGroupId = randomUUID();
     }
 
-    await this.objectRepository.create(createData);
+    const createdObject = await this.objectRepository.create(createData);
+
+    // Add supposed updates for the created object
+    // Note: locale comes from operation.params, defaulting to 'en-US'
+    const locale = operation.params.locale || 'en-US';
+    await this.addSupposedUpdates(createdObject, locale);
+
+    // Publish datafinity object creation notification if importId is present
+    // importId indicates that this is a datafinity imported object
+    if (importId) {
+      await this.publishIfDatafinityObjectCreated({
+        creator,
+        author_permlink: permlink,
+        importId,
+      });
+    }
+  }
+
+  /**
+   * Add supposed updates for a newly created object
+   * Gets supposed updates from SUPPOSED_UPDATES_BY_TYPE and sends them to ImportService
+   */
+  private async addSupposedUpdates(
+    wobject: ObjectDocument,
+    locale: string,
+  ): Promise<void> {
+    if (!wobject.object_type) return;
+
+    const supposedUpdates =
+      SUPPOSED_UPDATES_BY_TYPE[
+        wobject.object_type as keyof typeof SUPPOSED_UPDATES_BY_TYPE
+      ];
+
+    if (!supposedUpdates || supposedUpdates.length === 0) return;
+
+    const importWobjData = {
+      object_type: wobject.object_type,
+      author_permlink: wobject.author_permlink,
+      fields: [] as Array<{
+        name: string;
+        body: string;
+        permlink?: string;
+        locale: string;
+        creator: string;
+        id?: string;
+        tagCategory?: string;
+      }>,
+    };
+
+    for (const update of supposedUpdates) {
+      const values = update.values || [];
+      for (const value of values) {
+        const translation =
+          SUPPOSED_UPDATES_TRANSLATIONS[
+            value as keyof typeof SUPPOSED_UPDATES_TRANSLATIONS
+          ];
+        const body =
+          translation?.[locale as keyof typeof translation] ||
+          translation?.['en-US'] ||
+          value;
+
+        const field: {
+          name: string;
+          body: string;
+          permlink?: string;
+          locale: string;
+          creator: string;
+          id?: string;
+          tagCategory?: string;
+        } = {
+          name: update.name,
+          body,
+          permlink: getPermlink(
+            `${wobject.author_permlink}-${update.name.toLowerCase()}-${this.randomString(5)}`,
+            'supposed-update',
+          ),
+          creator: wobject.creator,
+          locale,
+        };
+
+        if (update.id_path) {
+          // Set id field (id_path is typically 'id')
+          field.id = randomUUID();
+          // For categoryItem fields with id_path='id', also set tagCategory to link to tagCategory field
+          if (update.name === 'categoryItem' && update.id_path === 'id') {
+            field.tagCategory = value;
+          }
+        }
+
+        importWobjData.fields.push(field);
+      }
+    }
+
+    if (importWobjData.fields.length > 0) {
+      const result = await this.importUpdatesService.send([importWobjData]);
+      if (result.error) {
+        this.logger.warn(
+          `Failed to send supposed updates for ${wobject.author_permlink}: ${result.error.message}`,
+        );
+      } else {
+        this.logger.log(
+          `Sent ${importWobjData.fields.length} supposed updates for ${wobject.author_permlink}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Publish notification if datafinity object was created
+   * Publishes to Redis channel 'datafinityObject' when importId is present
+   */
+  private async publishIfDatafinityObjectCreated(params: {
+    creator: string;
+    author_permlink: string;
+    importId: string;
+  }): Promise<void> {
+    const message = JSON.stringify({
+      user: params.creator,
+      author_permlink: params.author_permlink,
+      importId: params.importId,
+    });
+
+    try {
+      await this.cacheService.publish('datafinityObject', message);
+      this.logger.log(
+        `Published datafinity object creation notification for ${params.author_permlink} with importId ${params.importId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish datafinity object notification: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private randomString(length = 5): string {
+    let result = '';
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < length; i += 1) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
+    }
+    return result;
   }
 }

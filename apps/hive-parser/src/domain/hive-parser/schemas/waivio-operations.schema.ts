@@ -27,6 +27,10 @@ const createObjectOp = z
           message: `Locale must be one of: ${APP_LANGUAGES.join(', ')}`,
         })
         .openapi({ description: 'Locale code (e.g. en-US)' }),
+      importId: z.string().optional().openapi({
+        description:
+          'Optional import ID for objects from import service. If present, triggers object creation notification.',
+      }),
     }),
   })
   .openapi('CreateObject', { description: 'Creates a new Waivio object' });
