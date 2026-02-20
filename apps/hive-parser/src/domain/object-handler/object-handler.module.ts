@@ -7,8 +7,12 @@ import { VoteObjectFieldHandler } from './vote-object-field.handler';
 import { FieldWeightRecalcService } from './field-weight-recalc.service';
 import { ObjectHandlerService } from './object-handler.service';
 import { UpdateObjectValidatorService } from './update-object-validator.service';
+import { UpdateSpecificFieldsService } from './update-specific-fields.service';
 import { UserRestrictionsModule } from '../user-restrictions';
 import { ObjectProcessorIntegrationModule } from '../object-processor-integration';
+import { NotificationsModule } from '../notifications';
+import { CacheModule } from '../cache';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -16,6 +20,9 @@ import { ObjectProcessorIntegrationModule } from '../object-processor-integratio
     UtilsModule,
     UserRestrictionsModule,
     ObjectProcessorIntegrationModule, // Import the shared integration module
+    NotificationsModule,
+    CacheModule,
+    ConfigModule,
   ],
   providers: [
     CreateObjectHandler,
@@ -24,7 +31,12 @@ import { ObjectProcessorIntegrationModule } from '../object-processor-integratio
     FieldWeightRecalcService,
     ObjectHandlerService,
     UpdateObjectValidatorService,
+    UpdateSpecificFieldsService,
   ],
-  exports: [ObjectHandlerService, FieldWeightRecalcService],
+  exports: [
+    ObjectHandlerService,
+    FieldWeightRecalcService,
+    UpdateSpecificFieldsService,
+  ],
 })
 export class ObjectHandlerModule {}

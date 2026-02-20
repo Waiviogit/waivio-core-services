@@ -176,4 +176,135 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
       active_votes: field.active_votes || [],
     };
   }
+
+  async getFieldByTransactionId(
+    objectPermlink: string,
+    fieldTransactionId: string,
+  ): Promise<ObjectDocument['fields'][0] | null> {
+    const object = await this.findOne({
+      filter: {
+        author_permlink: objectPermlink,
+        'fields.transactionId': fieldTransactionId,
+      },
+      projection: {
+        'fields.$': 1,
+      },
+    });
+
+    if (!object || !object.fields || object.fields.length === 0) {
+      return null;
+    }
+
+    return object.fields[0];
+  }
+
+  async getFieldsByName(
+    objectPermlink: string,
+    fieldName: string,
+  ): Promise<ObjectDocument['fields']> {
+    const object = await this.findOne({
+      filter: {
+        author_permlink: objectPermlink,
+        'fields.name': fieldName,
+      },
+      projection: {
+        fields: {
+          $elemMatch: { name: fieldName },
+        },
+      },
+    });
+
+    return object?.fields || [];
+  }
+
+  async addSearchFields(
+    objectPermlink: string,
+    newWords: string[],
+  ): Promise<void> {
+    const compactWords = newWords.filter((word) => word);
+    if (compactWords.length === 0) return;
+
+    await this.updateOne({
+      filter: { author_permlink: objectPermlink },
+      update: {
+        $addToSet: {
+          search: { $each: compactWords },
+        },
+      },
+    });
+  }
+
+  async updateObject(
+    objectPermlink: string,
+    updateData: Partial<ObjectDocument>,
+  ): Promise<void> {
+    await this.updateOne({
+      filter: { author_permlink: objectPermlink },
+      update: { $set: updateData },
+    });
+  }
+
+  async updateObjectFields(
+    objectPermlink: string,
+    updateData: Partial<ObjectDocument>,
+  ): Promise<void> {
+    await this.updateOne({
+      filter: { author_permlink: objectPermlink },
+      update: updateData,
+    });
+  }
+
+  async updateManyObjects(
+    filter: { author_permlink?: { $in: string[] } },
+    updateData: Partial<ObjectDocument>,
+  ): Promise<void> {
+    await this.updateMany({
+      filter,
+      update: { $set: updateData },
+    });
+  }
+
+  async findChildrenWithoutMap(
+    parentPermlink: string,
+  ): Promise<ObjectDocument[]> {
+    return this.find({
+      filter: {
+        parent: parentPermlink,
+        'fields.name': { $ne: 'map' },
+      },
+      projection: { author_permlink: 1 },
+    });
+  }
+
+  async findByGroupIdsExcludingMetaGroup(
+    groupIds: string[],
+    metaGroupId?: string,
+  ): Promise<ObjectDocument[]> {
+    const filter: {
+      'fields.name': string;
+      'fields.body': { $in: string[] };
+      metaGroupId?: { $ne: string };
+    } = {
+      'fields.name': FIELDS_NAMES.GROUP_ID,
+      'fields.body': { $in: groupIds },
+    };
+    if (metaGroupId) {
+      filter.metaGroupId = { $ne: metaGroupId };
+    }
+    return this.find({ filter });
+  }
+
+  async departmentUniqCount(departmentName: string): Promise<number> {
+    const result = await this.model.aggregate([
+      {
+        $match: {
+          departments: departmentName,
+        },
+      },
+      {
+        $count: 'count',
+      },
+    ]);
+    return result[0]?.count ?? 0;
+  }
 }

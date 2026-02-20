@@ -3,6 +3,7 @@ import { ObjectRepository, WaivStakeRepository } from '../../repositories';
 import type { ObjectMethodHandler, ObjectMethodContext } from './interface';
 import type { WaivioOperation } from '../hive-parser/schemas';
 import { FieldWeightRecalcService } from './field-weight-recalc.service';
+import { UpdateSpecificFieldsService } from './update-specific-fields.service';
 
 @Injectable()
 export class VoteObjectFieldHandler implements ObjectMethodHandler {
@@ -12,6 +13,7 @@ export class VoteObjectFieldHandler implements ObjectMethodHandler {
     private readonly objectRepository: ObjectRepository,
     private readonly waivStakeRepository: WaivStakeRepository,
     private readonly fieldWeightRecalcService: FieldWeightRecalcService,
+    private readonly updateSpecificFieldsService: UpdateSpecificFieldsService,
   ) {}
 
   async handle(
@@ -54,5 +56,13 @@ export class VoteObjectFieldHandler implements ObjectMethodHandler {
       objectPermlink,
       fieldTransactionId,
     );
+
+    // Update specific fields after vote
+    await this.updateSpecificFieldsService.update({
+      objectPermlink,
+      fieldTransactionId,
+      voter,
+      percent,
+    });
   }
 }

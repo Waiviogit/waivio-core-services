@@ -3,6 +3,7 @@ import { ObjectRepository } from '../../repositories';
 import type { ObjectMethodHandler, ObjectMethodContext } from './interface';
 import type { WaivioOperation } from '../hive-parser/schemas';
 import { UpdateObjectValidatorService } from './update-object-validator.service';
+import { UpdateSpecificFieldsService } from './update-specific-fields.service';
 
 @Injectable()
 export class UpdateObjectHandler implements ObjectMethodHandler {
@@ -11,6 +12,7 @@ export class UpdateObjectHandler implements ObjectMethodHandler {
   constructor(
     private readonly objectRepository: ObjectRepository,
     private readonly validatorService: UpdateObjectValidatorService,
+    private readonly updateSpecificFieldsService: UpdateSpecificFieldsService,
   ) {}
 
   async handle(
@@ -81,6 +83,12 @@ export class UpdateObjectHandler implements ObjectMethodHandler {
       locale,
       creator,
       transactionId: ctx.transactionId,
+    });
+
+    // Update specific fields after field append
+    await this.updateSpecificFieldsService.update({
+      objectPermlink,
+      fieldTransactionId: ctx.transactionId,
     });
   }
 }

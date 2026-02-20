@@ -53,7 +53,10 @@ interface RestaurantStatusData {
 }
 
 interface RejectUpdateData {
+  creator: string;
+  voter: string;
   author_permlink: string;
+  fieldName: string;
   parent_permlink?: string;
   parent_name?: string;
   object_name?: string;
