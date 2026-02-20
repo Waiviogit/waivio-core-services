@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { FieldVoteRepository } from '../../repositories';
+import { ObjectRepository, WaivStakeRepository } from '../../repositories';
 import type { ObjectMethodHandler, ObjectMethodContext } from './interface';
 import type { WaivioOperation } from '../hive-parser/schemas';
 import { FieldWeightRecalcService } from './field-weight-recalc.service';
@@ -9,7 +9,8 @@ export class VoteObjectFieldHandler implements ObjectMethodHandler {
   private readonly logger = new Logger(VoteObjectFieldHandler.name);
 
   constructor(
-    private readonly fieldVoteRepository: FieldVoteRepository,
+    private readonly objectRepository: ObjectRepository,
+    private readonly waivStakeRepository: WaivStakeRepository,
     private readonly fieldWeightRecalcService: FieldWeightRecalcService,
   ) {}
 
@@ -18,22 +19,37 @@ export class VoteObjectFieldHandler implements ObjectMethodHandler {
     ctx: ObjectMethodContext,
   ): Promise<void> {
     if (operation.method !== 'voteObjectField') return;
-    const { objectPermlink, fieldTransactionId, weight } = operation.params;
+    const { objectPermlink, fieldTransactionId, percent } = operation.params;
 
     this.logger.log(
-      `voteObjectField: ${fieldTransactionId} on ${objectPermlink} by ${ctx.account} (weight: ${weight})`,
+      `voteObjectField: ${fieldTransactionId} on ${objectPermlink} by ${ctx.account} (percent: ${percent})`,
     );
 
     const voter = ctx.account;
 
-    await this.fieldVoteRepository.upsertVote(
+    // Get WAIV stake for the voter
+    const stakeDoc = await this.waivStakeRepository.findOne({
+      filter: { account: voter },
+    });
+    const stake = stakeDoc?.stake || 0;
+
+    // Calculate weight: weight = percent * stake / 10000
+    // percent is in range -10000 to 10000 (like Hive percent)
+    const weight = (percent * stake) / 10000;
+
+    // Store vote directly in the field's active_votes array
+    await this.objectRepository.upsertFieldVote(
       objectPermlink,
       fieldTransactionId,
-      voter,
-      weight,
-      ctx.timestamp,
+      {
+        voter,
+        percent,
+        weight,
+        timestamp: ctx.timestamp,
+      },
     );
 
+    // Recalculate field weight based on all votes
     await this.fieldWeightRecalcService.recalculateFieldWeight(
       objectPermlink,
       fieldTransactionId,

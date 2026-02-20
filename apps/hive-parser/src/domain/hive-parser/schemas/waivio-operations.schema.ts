@@ -66,8 +66,9 @@ const voteObjectFieldOp = z
       fieldTransactionId: z
         .string()
         .openapi({ description: 'Transaction ID of the field to vote on' }),
-      weight: z.number().min(-10000).max(10000).openapi({
-        description: 'Vote weight (-10000 to 10000, like Hive percent)',
+      percent: z.number().min(-10000).max(10000).openapi({
+        description:
+          'Vote percent (-10000 to 10000, like Hive percent). Weight will be calculated based on WAIV stake.',
       }),
     }),
   })

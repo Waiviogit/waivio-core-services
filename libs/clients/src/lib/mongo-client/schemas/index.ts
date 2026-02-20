@@ -1,6 +1,5 @@
 export * from './waivio/app.schema';
 export * from './waivio/object.schema';
-export * from './waivio/field-vote.schema';
 export * from './waivio/waiv-stake.schema';
 export * from './waivio/user.schema';
 export * from './waivio/post.schema';

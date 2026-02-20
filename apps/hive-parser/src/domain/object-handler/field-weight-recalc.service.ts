@@ -1,34 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ObjectRepository, FieldVoteRepository } from '../../repositories';
+import { ObjectRepository } from '../../repositories';
 
 @Injectable()
 export class FieldWeightRecalcService {
   private readonly logger = new Logger(FieldWeightRecalcService.name);
 
-  constructor(
-    private readonly objectRepository: ObjectRepository,
-    private readonly fieldVoteRepository: FieldVoteRepository,
-  ) {}
+  constructor(private readonly objectRepository: ObjectRepository) {}
 
   async recalculateFieldWeightsForVoter(voter: string): Promise<void> {
-    const votes = await this.fieldVoteRepository.find({
-      filter: { voter },
+    // Find all objects that have votes from this voter
+    const objects = await this.objectRepository.find({
+      filter: {
+        'fields.active_votes.voter': voter,
+      },
     });
 
-    if (votes.length === 0) return;
+    if (objects.length === 0) return;
 
-    const voteGroups = new Map<string, Array<(typeof votes)[0]>>();
-    for (const vote of votes) {
-      const key = `${vote.objectPermlink}:${vote.fieldTransactionId}`;
-      if (!voteGroups.has(key)) {
-        voteGroups.set(key, []);
+    const processedFields = new Set<string>();
+    for (const object of objects) {
+      if (!object.fields) continue;
+
+      for (const field of object.fields) {
+        if (!field.active_votes || field.active_votes.length === 0) continue;
+
+        const key = `${object.author_permlink}:${field.transactionId}`;
+        if (processedFields.has(key)) continue;
+        processedFields.add(key);
+
+        await this.recalculateFieldWeight(
+          object.author_permlink,
+          field.transactionId,
+        );
       }
-      voteGroups.get(key)!.push(vote);
-    }
-
-    for (const [key] of voteGroups) {
-      const [objectPermlink, fieldTransactionId] = key.split(':');
-      await this.recalculateFieldWeight(objectPermlink, fieldTransactionId);
     }
   }
 
@@ -36,13 +40,29 @@ export class FieldWeightRecalcService {
     objectPermlink: string,
     fieldTransactionId: string,
   ): Promise<void> {
-    const votes = await this.fieldVoteRepository.findVotesWithStakes(
+    const fieldData = await this.objectRepository.getFieldWithVotes(
       objectPermlink,
       fieldTransactionId,
     );
 
-    const totalWeight = votes.reduce((sum, vote) => {
-      return sum + vote.weight * vote.stake;
+    if (
+      !fieldData ||
+      !fieldData.active_votes ||
+      fieldData.active_votes.length === 0
+    ) {
+      // No votes, set weight to 0
+      await this.objectRepository.updateFieldWeight(
+        objectPermlink,
+        fieldTransactionId,
+        0,
+      );
+      return;
+    }
+
+    // Calculate total weight: sum of all vote weights
+    // Note: weight is already calculated as (percent * stake) / 10000 in the handler
+    const totalWeight = fieldData.active_votes.reduce((sum, vote) => {
+      return sum + vote.weight;
     }, 0);
 
     await this.objectRepository.updateFieldWeight(

@@ -102,4 +102,78 @@ export class ObjectRepository extends MongoRepository<ObjectDocument> {
       projection: { authority: 1 },
     });
   }
+
+  async upsertFieldVote(
+    objectPermlink: string,
+    fieldTransactionId: string,
+    vote: {
+      voter: string;
+      percent: number;
+      weight: number;
+      timestamp: string;
+    },
+  ): Promise<void> {
+    // Remove existing vote from this voter if it exists
+    await this.updateOne({
+      filter: {
+        author_permlink: objectPermlink,
+        'fields.transactionId': fieldTransactionId,
+      },
+      update: {
+        $pull: {
+          'fields.$[field].active_votes': { voter: vote.voter },
+        },
+      },
+      options: {
+        arrayFilters: [{ 'field.transactionId': fieldTransactionId }],
+      },
+    });
+
+    // Add the new vote
+    await this.updateOne({
+      filter: {
+        author_permlink: objectPermlink,
+        'fields.transactionId': fieldTransactionId,
+      },
+      update: {
+        $push: {
+          'fields.$[field].active_votes': vote,
+        },
+      },
+      options: {
+        arrayFilters: [{ 'field.transactionId': fieldTransactionId }],
+      },
+    });
+  }
+
+  async getFieldWithVotes(
+    objectPermlink: string,
+    fieldTransactionId: string,
+  ): Promise<{
+    active_votes?: Array<{
+      voter: string;
+      percent: number;
+      weight: number;
+      timestamp: string;
+    }>;
+  } | null> {
+    const object = await this.findOne({
+      filter: {
+        author_permlink: objectPermlink,
+        'fields.transactionId': fieldTransactionId,
+      },
+      projection: {
+        'fields.$': 1,
+      },
+    });
+
+    if (!object || !object.fields || object.fields.length === 0) {
+      return null;
+    }
+
+    const field = object.fields[0];
+    return {
+      active_votes: field.active_votes || [],
+    };
+  }
 }

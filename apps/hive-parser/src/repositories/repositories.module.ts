@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppRepository } from './app.repository';
 import { ObjectRepository } from './object.repository';
-import { FieldVoteRepository } from './field-vote.repository';
 import { WaivStakeRepository } from './waiv-stake.repository';
 import { UserRepository } from './user.repository';
 import { PostRepository } from './post.repository';
@@ -17,7 +16,6 @@ import { UserExpertiseRepository } from './user-expertise.repository';
   providers: [
     AppRepository,
     ObjectRepository,
-    FieldVoteRepository,
     WaivStakeRepository,
     UserRepository,
     PostRepository,
@@ -32,7 +30,6 @@ import { UserExpertiseRepository } from './user-expertise.repository';
   exports: [
     AppRepository,
     ObjectRepository,
-    FieldVoteRepository,
     WaivStakeRepository,
     UserRepository,
     PostRepository,

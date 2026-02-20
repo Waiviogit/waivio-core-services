@@ -1,5 +1,13 @@
 import { Schema, Model, Connection, Document, Types } from 'mongoose';
 
+export interface FieldActiveVote {
+  _id?: Types.ObjectId;
+  voter: string;
+  percent: number;
+  weight: number;
+  timestamp: string;
+}
+
 export interface ObjectField {
   name: string;
   body: string;
@@ -12,6 +20,7 @@ export interface ObjectField {
   weight: number;
   endDate?: number;
   startDate?: number;
+  active_votes?: FieldActiveVote[];
 }
 
 export interface Authority {
@@ -55,6 +64,16 @@ const AuthoritySchema = new Schema(
   { _id: false },
 );
 
+const FieldActiveVoteSchema = new Schema(
+  {
+    voter: { type: String, required: true },
+    percent: { type: Number, required: true },
+    weight: { type: Number, required: true },
+    timestamp: { type: String, required: true },
+  },
+  { _id: true },
+);
+
 const FieldsSchema = new Schema({
   name: { type: String, required: true },
   body: { type: String, required: true },
@@ -67,6 +86,7 @@ const FieldsSchema = new Schema({
   weight: { type: Number, default: 0 },
   endDate: { type: Number },
   startDate: { type: Number },
+  active_votes: { type: [FieldActiveVoteSchema], default: [] },
 });
 
 export const ObjectSchema = new Schema<ObjectDocument>(
@@ -113,6 +133,7 @@ ObjectSchema.index({ weight: -1 });
 ObjectSchema.index({ activeCampaignsCount: -1, weight: -1 });
 ObjectSchema.index({ objectType: -1, weight: -1 });
 ObjectSchema.index({ 'status.title': -1, 'status.link': -1 });
+ObjectSchema.index({ 'fields.transactionId': 1 });
 
 export const objectModel = (conn: Connection): Model<ObjectDocument> =>
   conn.model<ObjectDocument>('object', ObjectSchema, 'objects');

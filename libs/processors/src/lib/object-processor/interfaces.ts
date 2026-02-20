@@ -42,12 +42,16 @@ export interface AdminVote {
 }
 
 // Field extends ObjectField with processing-related properties
-export interface Field extends ObjectField {
+// Omit 'active_votes' because we need to replace FieldActiveVote[] with ActiveVote[]
+// FieldActiveVote (stored in DB) has: voter, percent, weight, timestamp
+// ActiveVote (used during processing) extends it with computed fields: weightWAIV, rshares_weight, ownership, etc.
+// TypeScript doesn't allow simple override because FieldActiveVote[] and ActiveVote[] are incompatible types
+export interface Field extends Omit<ObjectField, 'active_votes'> {
   _id?: {
     getTimestamp(): number;
   };
   permlink?: string;
-  active_votes?: ActiveVote[];
+  active_votes?: ActiveVote[]; // Extended type for processing (includes computed fields)
   weightWAIV?: number;
   createdAt?: number;
   adminVote?: AdminVote;
