@@ -576,7 +576,7 @@ export class UpdateSpecificFieldsService {
         params.id ? 'category-item' : 'tag-category',
       ),
       locale: 'en-US',
-      creator: 'asd09', // TODO: Get from config or context
+      creator: '',
     };
 
     if (params.id && params.tag) {
