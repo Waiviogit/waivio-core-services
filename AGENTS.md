@@ -36,6 +36,7 @@ This document defines the rules an agent must follow when working in this monore
   - `@waivio-core-services/clients` - database, cache, and blockchain clients (Mongo, Redis, Hive)
   - `@waivio-core-services/common` - shared utilities
   - `@waivio-core-services/processors` - blockchain processing logic
+  - `@waivio-core-services/domain-constants` - Waivio domain constants (object types, field names, supposed updates)
 
 ### 2.3 App structure
 
@@ -118,7 +119,7 @@ Indexing rules:
 
 **Key runtime dependencies (shared at root):**
 
-- `@nestjs/*`, `mongoose`, `ioredis`, `@hiveio/dhive`, `zod`, `rxjs`, `ws`, `lodash`, `axios`
+- `@nestjs/*`, `mongoose`, `ioredis`, `@hiveio/dhive`, `zod`, `rxjs`, `ws`, `lodash`
 
 ### 5.2 Project-level dependencies
 
@@ -415,6 +416,44 @@ Commands:
 - Refactor safely.
 - Do not commit `.env` files or secrets.
 
+## 17. Architecture extensions and execution rules
+
+### 17.1 Boundary enforcement
+
+- Project tags (`type:app`, `type:lib`, `scope:shared`, `scope:infra`, `scope:domain`) are set in each project's `project.json`.
+- Module boundaries are enforced by ESLint rule `@nx/enforce-module-boundaries` with `depConstraints`: apps may depend only on libs; `scope:shared` libs have no internal lib deps; `scope:infra` may depend on `scope:shared`; `scope:domain` may depend on `scope:infra` and `scope:shared`.
+- Do not add dependencies that violate these constraints.
+
+### 17.2 Repository vs domain (strict)
+
+- Repositories must perform data access only (queries, writes, projections). No business rules (e.g. "is user blacklisted", "find or create department") in the repository layer.
+- Move such logic to domain services that use repositories. Repositories expose primitives (e.g. `findOneByName`, `create`); domain services implement decisions and orchestration.
+
+### 17.3 Strategy-based decomposition
+
+- Large orchestrator services (e.g. many field-specific handlers in one class) should be split into a thin orchestrator and multiple strategy classes implementing a common interface (e.g. `supports(context)` and `execute(context)`).
+- Add new behavior by adding new strategy classes rather than expanding a single large service.
+
+### 17.4 Event-driven coordination
+
+- Use NestJS `EventEmitter2` (`@nestjs/event-emitter`) for in-process domain events when coordinating side effects (notifications, import updates, cache updates, external API calls).
+- Emit typed domain events from core handlers (e.g. `object.created`, `object.field.updated`); subscribe with dedicated handlers so core logic stays decoupled from side effects.
+- Keep event payloads typed and handlers idempotent where possible.
+
+### 17.5 Capability slicing
+
+- Structure code so that capabilities (e.g. object processing, notifications, import integrations) have clear boundaries and communicate via contracts or events. This allows future extraction into separate processes or services without large rewrites.
+
+### 17.6 New apps and libs (Nx generators only)
+
+- Do not create new apps or libraries by manually adding folders and config. Always scaffold via Nx generators (e.g. `nx g @nx/js:library --name=... --directory=... --no-interactive`). Use the `nx-generate` skill when scaffolding.
+- This keeps `project.json`, `tsconfig`, and dependency graph consistent.
+
+### 17.7 Domain constants and shared libs
+
+- Domain-specific constants (object types, field names, supposed updates, translations) belong in `@waivio-core-services/domain-constants` or another domain-scoped lib.
+- Keep `@waivio-core-services/common` generic (utilities, non-domain constants). Keep `@waivio-core-services/clients` infrastructure-only (no domain business rules or domain-specific schemas ownership).
+
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
@@ -429,7 +468,8 @@ Commands:
 
 ## Scaffolding & Generators
 
-- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+- New apps and libs MUST be created only through Nx generators (e.g. `nx g @nx/js:library ...`). Do not create them by hand.
+- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools.
 
 ## When to use nx_docs
 

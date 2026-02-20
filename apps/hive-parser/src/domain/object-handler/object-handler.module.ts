@@ -14,13 +14,24 @@ import { NotificationsModule } from '../notifications';
 import { CacheModule } from '../cache';
 import { ImportUpdatesModule } from '../import-updates';
 import { WaivioApiModule } from '../waivio-api';
+import { DepartmentModule } from '../department';
 import { ConfigModule } from '@nestjs/config';
+import {
+  FieldUpdateOrchestrator,
+  DepartmentFieldUpdateStrategy,
+  ListItemUpdateStrategy,
+  TagCategoryUpdateStrategy,
+  SupposedUpdatesStrategy,
+  SearchFieldUpdateStrategy,
+} from './strategies';
+import { ObjectCreatedEventSubscriber } from '../events';
 
 @Module({
   imports: [
     RepositoriesModule,
     UtilsModule,
     UserRestrictionsModule,
+    DepartmentModule,
     ObjectProcessorIntegrationModule, // Import the shared integration module
     NotificationsModule,
     CacheModule,
@@ -29,6 +40,28 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule,
   ],
   providers: [
+    DepartmentFieldUpdateStrategy,
+    ListItemUpdateStrategy,
+    TagCategoryUpdateStrategy,
+    SupposedUpdatesStrategy,
+    SearchFieldUpdateStrategy,
+    {
+      provide: FieldUpdateOrchestrator,
+      useFactory: (
+        dep: DepartmentFieldUpdateStrategy,
+        list: ListItemUpdateStrategy,
+        tag: TagCategoryUpdateStrategy,
+        supposed: SupposedUpdatesStrategy,
+        search: SearchFieldUpdateStrategy,
+      ) => new FieldUpdateOrchestrator([dep, list, tag, supposed, search]),
+      inject: [
+        DepartmentFieldUpdateStrategy,
+        ListItemUpdateStrategy,
+        TagCategoryUpdateStrategy,
+        SupposedUpdatesStrategy,
+        SearchFieldUpdateStrategy,
+      ],
+    },
     CreateObjectHandler,
     UpdateObjectHandler,
     VoteObjectFieldHandler,
@@ -36,6 +69,7 @@ import { ConfigModule } from '@nestjs/config';
     ObjectHandlerService,
     UpdateObjectValidatorService,
     UpdateSpecificFieldsService,
+    ObjectCreatedEventSubscriber,
   ],
   exports: [
     ObjectHandlerService,

@@ -44,38 +44,6 @@ export class BlacklistRepository extends MongoRepository<BlacklistDocument> {
     return blacklist;
   }
 
-  async isUserBlacklisted(user: string, targetUser: string): Promise<boolean> {
-    const blacklist = await this.findByUser(user);
-    if (!blacklist) {
-      return false;
-    }
-
-    // Check direct blacklist
-    if (blacklist.blackList.includes(targetUser)) {
-      return true;
-    }
-
-    // Check whitelist (if user is whitelisted, they're not blacklisted)
-    if (blacklist.whiteList.includes(targetUser)) {
-      return false;
-    }
-
-    // Check followLists if they exist
-    if (blacklist.followLists && blacklist.followLists.length > 0) {
-      const followListDocs = await this.find({
-        filter: { user: { $in: blacklist.followLists } },
-      });
-
-      for (const followDoc of followListDocs) {
-        if (followDoc.blackList.includes(targetUser)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
   async findByUsersWithProjection(
     users: string[],
     projection: { followLists?: number; blackList?: number },

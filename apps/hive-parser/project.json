@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/hive-parser/src",
   "projectType": "application",
-  "tags": [],
+  "tags": ["type:app", "scope:hive-parser"],
   "implicitDependencies": ["clients", "common", "processors"],
   "targets": {
     "build": {

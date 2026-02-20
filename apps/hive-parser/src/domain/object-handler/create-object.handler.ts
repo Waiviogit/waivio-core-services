@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'crypto';
 import { ObjectRepository } from '../../repositories';
 import type { ObjectMethodHandler, ObjectMethodContext } from './interface';
@@ -13,7 +14,7 @@ import {
 } from '@waivio-core-services/common';
 import { UserRestrictionService } from '../user-restrictions';
 import { ImportUpdatesService } from '../import-updates';
-import { CacheService } from '../cache';
+import { DOMAIN_EVENTS } from '../events';
 
 @Injectable()
 export class CreateObjectHandler implements ObjectMethodHandler {
@@ -23,7 +24,7 @@ export class CreateObjectHandler implements ObjectMethodHandler {
     private readonly objectRepository: ObjectRepository,
     private readonly userRestrictionService: UserRestrictionService,
     private readonly importUpdatesService: ImportUpdatesService,
-    private readonly cacheService: CacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async handle(
@@ -84,15 +85,12 @@ export class CreateObjectHandler implements ObjectMethodHandler {
     const locale = operation.params.locale || 'en-US';
     await this.addSupposedUpdates(createdObject, locale);
 
-    // Publish datafinity object creation notification if importId is present
-    // importId indicates that this is a datafinity imported object
-    if (importId) {
-      await this.publishIfDatafinityObjectCreated({
-        creator,
-        author_permlink: permlink,
-        importId,
-      });
-    }
+    // Emit domain event for side effects (e.g. datafinity notification when importId present)
+    this.eventEmitter.emit(DOMAIN_EVENTS.OBJECT_CREATED, {
+      creator,
+      author_permlink: permlink,
+      importId,
+    });
   }
 
   /**
@@ -181,33 +179,6 @@ export class CreateObjectHandler implements ObjectMethodHandler {
           `Sent ${importWobjData.fields.length} supposed updates for ${wobject.author_permlink}`,
         );
       }
-    }
-  }
-
-  /**
-   * Publish notification if datafinity object was created
-   * Publishes to Redis channel 'datafinityObject' when importId is present
-   */
-  private async publishIfDatafinityObjectCreated(params: {
-    creator: string;
-    author_permlink: string;
-    importId: string;
-  }): Promise<void> {
-    const message = JSON.stringify({
-      user: params.creator,
-      author_permlink: params.author_permlink,
-      importId: params.importId,
-    });
-
-    try {
-      await this.cacheService.publish('datafinityObject', message);
-      this.logger.log(
-        `Published datafinity object creation notification for ${params.author_permlink} with importId ${params.importId}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to publish datafinity object notification: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
 

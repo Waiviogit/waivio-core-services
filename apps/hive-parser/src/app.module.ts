@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import hiveParserConfig from './config/hive-parser.config';
 import { validateHiveParser } from './config/env.validation';
@@ -15,6 +16,7 @@ import { HiveParserModule } from './domain/hive-parser/hive-parser.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [hiveParserConfig],

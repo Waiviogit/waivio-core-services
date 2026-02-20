@@ -16,9 +16,18 @@ export default [
           enforceBuildableLibDependency: true,
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
+            { sourceTag: 'type:app', onlyDependOnLibsWithTags: ['type:lib'] },
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'scope:shared',
+              onlyDependOnLibsWithTags: [],
+            },
+            {
+              sourceTag: 'scope:infra',
+              onlyDependOnLibsWithTags: ['scope:shared'],
+            },
+            {
+              sourceTag: 'scope:domain',
+              onlyDependOnLibsWithTags: ['scope:infra', 'scope:shared'],
             },
           ],
         },

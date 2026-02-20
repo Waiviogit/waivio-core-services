@@ -7,6 +7,7 @@ import {
   DepartmentRepository,
   UserShopDeselectRepository,
 } from '../../repositories';
+import { DepartmentService } from '../department';
 import {
   FIELDS_NAMES,
   SEARCH_FIELDS,
@@ -30,6 +31,7 @@ import type {
 } from '@waivio-core-services/clients';
 import type { App, Wobject } from '@waivio-core-services/processors';
 import { randomUUID } from 'node:crypto';
+import { FieldUpdateOrchestrator } from './strategies';
 
 interface FieldUpdateParams {
   objectPermlink: string;
@@ -47,6 +49,7 @@ export class UpdateSpecificFieldsService {
     private readonly objectRepository: ObjectRepository,
     private readonly appRepository: AppRepository,
     private readonly departmentRepository: DepartmentRepository,
+    private readonly departmentService: DepartmentService,
     private readonly userShopDeselectRepository: UserShopDeselectRepository,
     private readonly objectProcessorService: ObjectProcessorService,
     private readonly notificationsService: NotificationsService,
@@ -54,7 +57,46 @@ export class UpdateSpecificFieldsService {
     private readonly configService: ConfigService,
     private readonly importUpdatesService: ImportUpdatesService,
     private readonly listItemProcessService: ListItemProcessService,
+    private readonly fieldUpdateOrchestrator: FieldUpdateOrchestrator,
   ) {}
+
+  /** Public delegates for strategy layer (do not call from outside domain) */
+  async runAddSearchField(params: {
+    objectPermlink: string;
+    field: ObjectField;
+  }): Promise<void> {
+    return this.addSearchField(params);
+  }
+  async runCreateTags(params: {
+    objectPermlink: string;
+    field: ObjectField;
+    app: App;
+  }): Promise<void> {
+    return this.createTags(params);
+  }
+  async runManageDepartments(params: {
+    field: ObjectField;
+    objectPermlink: string;
+    app: App;
+    percent?: number;
+  }): Promise<void> {
+    return this.manageDepartments(params);
+  }
+  async runProcessListItem(params: {
+    field: ObjectField;
+    objectPermlink: string;
+  }): Promise<void> {
+    return this.processListItem(params);
+  }
+  async runUpdateTagCloud(objectPermlink: string): Promise<void> {
+    return this.updateTagCloud(objectPermlink);
+  }
+  async runUpdateTagCategories(params: {
+    objectPermlink: string;
+    field: ObjectField;
+  }): Promise<void> {
+    return this.updateTagCategories(params);
+  }
 
   /**
    * Main entry point: Update specific fields after a field is created/updated
@@ -98,17 +140,39 @@ export class UpdateSpecificFieldsService {
       updatedAt: app.updatedAt ?? new Date(),
     };
 
-    // Get field-specific updater
-    const updateHandler =
-      this.updaterByFieldName[field.name] || this.updaterByFieldName.default;
-
-    await updateHandler({
+    const context = {
       field,
       objectPermlink,
       app: leanApp,
       voter,
       percent,
-    });
+    };
+
+    // Strategy-based handlers (department, list item, tag category, supposed updates, search)
+    await this.fieldUpdateOrchestrator.handle(context);
+
+    // Legacy map for fields not handled by strategies
+    const legacyFieldNames: Set<string> = new Set([
+      FIELDS_NAMES.PARENT,
+      FIELDS_NAMES.RATING,
+      FIELDS_NAMES.MAP,
+      FIELDS_NAMES.STATUS,
+      FIELDS_NAMES.AUTHORITY,
+      FIELDS_NAMES.AUTHORS,
+      FIELDS_NAMES.PUBLISHER,
+      FIELDS_NAMES.GROUP_ID,
+    ]);
+    if (legacyFieldNames.has(field.name as string)) {
+      const updateHandler =
+        this.updaterByFieldName[field.name] || this.updaterByFieldName.default;
+      await updateHandler({
+        field,
+        objectPermlink,
+        app: leanApp,
+        voter,
+        percent,
+      });
+    }
 
     // Handle reject update notification if field weight is negative
     // Note: field.creator is available in ObjectField schema
@@ -142,7 +206,7 @@ export class UpdateSpecificFieldsService {
     }
   }
 
-  // Field-specific updaters
+  // Legacy field updaters (strategy-handled fields use FieldUpdateOrchestrator)
   private readonly updaterByFieldName: Record<
     string,
     (params: {
@@ -153,81 +217,18 @@ export class UpdateSpecificFieldsService {
       percent?: number;
     }) => Promise<void>
   > = {
-    // Updater 1: Search fields only
-    [FIELDS_NAMES.EMAIL]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.PHONE]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.ADDRESS]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.COMPANY_ID]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.PRODUCT_ID]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.BRAND]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.MANUFACTURER]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.MERCHANT]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-    [FIELDS_NAMES.RECIPE_INGREDIENTS]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-    },
-
-    // Updater 2: Search fields + tags
-    [FIELDS_NAMES.NAME]: async ({ field, objectPermlink, app }) => {
-      await this.addSearchField({ objectPermlink, field });
-      await this.createTags({ objectPermlink, field, app });
-    },
-    [FIELDS_NAMES.DESCRIPTION]: async ({ field, objectPermlink, app }) => {
-      await this.addSearchField({ objectPermlink, field });
-      await this.createTags({ objectPermlink, field, app });
-    },
-    [FIELDS_NAMES.TITLE]: async ({ field, objectPermlink, app }) => {
-      await this.addSearchField({ objectPermlink, field });
-      await this.createTags({ objectPermlink, field, app });
-    },
-
-    // Updater 3: Parent processing
     [FIELDS_NAMES.PARENT]: async ({ objectPermlink, app }) => {
       await this.processingParent(objectPermlink, app);
     },
-
-    // Updater 4: Tag cloud
-    [FIELDS_NAMES.TAG_CLOUD]: async ({ objectPermlink }) => {
-      await this.updateTagCloud(objectPermlink);
-    },
-
-    // Updater 5: Rating
     [FIELDS_NAMES.RATING]: async ({ objectPermlink }) => {
       await this.updateRatings(objectPermlink);
     },
-
-    // Updater 6: Map
     [FIELDS_NAMES.MAP]: async ({ objectPermlink, app }) => {
       await this.updateMap(objectPermlink, app);
     },
-
-    // Updater 7: Status
     [FIELDS_NAMES.STATUS]: async ({ field, objectPermlink, voter }) => {
       await this.updateStatus({ field, objectPermlink, voter });
     },
-
-    // Updater 8: Category item (search + tag categories)
-    [FIELDS_NAMES.CATEGORY_ITEM]: async ({ field, objectPermlink }) => {
-      await this.addSearchField({ objectPermlink, field });
-      await this.updateTagCategories({ objectPermlink, field });
-    },
-
-    // Updater 9: Authority
     [FIELDS_NAMES.AUTHORITY]: async ({
       field,
       objectPermlink,
@@ -236,8 +237,6 @@ export class UpdateSpecificFieldsService {
     }) => {
       await this.manageAuthorities({ field, objectPermlink, voter, percent });
     },
-
-    // Updater 10: Authors/Publisher (search + children)
     [FIELDS_NAMES.AUTHORS]: async ({ field, objectPermlink }) => {
       await this.addSearchField({ objectPermlink, field });
       await this.updateChildrenSingle({ field, objectPermlink });
@@ -246,31 +245,12 @@ export class UpdateSpecificFieldsService {
       await this.addSearchField({ objectPermlink, field });
       await this.updateChildrenSingle({ field, objectPermlink });
     },
-
-    // Updater 11: Departments
-    [FIELDS_NAMES.DEPARTMENTS]: async ({
-      field,
-      objectPermlink,
-      app,
-      percent,
-    }) => {
-      await this.manageDepartments({ field, objectPermlink, app, percent });
-    },
-
-    // Updater 12: Group ID (search + meta group)
     [FIELDS_NAMES.GROUP_ID]: async ({ field, objectPermlink }) => {
       await this.addSearchField({ objectPermlink, field });
       await this.updateMetaGroupId({ objectPermlink });
     },
-
-    // Updater 13: List item
-    [FIELDS_NAMES.LIST_ITEM]: async ({ field, objectPermlink }) => {
-      await this.processListItem({ field, objectPermlink });
-    },
-
-    // Default: no-op
     default: async () => {
-      // No specific update needed for this field type
+      /* no-op for field types with no legacy handler */
     },
   };
 
@@ -1074,7 +1054,7 @@ export class UpdateSpecificFieldsService {
       return;
     }
 
-    const department = await this.departmentRepository.findOneOrCreateByName({
+    const department = await this.departmentService.findOrCreateByName({
       name: params.field.body,
       search: this.parseName(params.field.body),
     });

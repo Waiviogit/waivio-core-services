@@ -16,22 +16,10 @@ export class DepartmentRepository extends MongoRepository<DepartmentDocument> {
     );
   }
 
-  async findOneOrCreateByName(params: {
-    name: string;
-    search: string;
-  }): Promise<DepartmentDocument> {
-    let department = await this.findOne({
-      filter: { name: params.name },
+  async findOneByName(name: string): Promise<DepartmentDocument | null> {
+    return this.findOne({
+      filter: { name },
     });
-
-    if (!department) {
-      department = await this.create({
-        name: params.name,
-        search: params.search,
-      });
-    }
-
-    return department;
   }
 
   async updateDepartmentOne(params: {
@@ -42,7 +30,10 @@ export class DepartmentRepository extends MongoRepository<DepartmentDocument> {
       $set?: Partial<DepartmentDocument>;
     };
   }): Promise<void> {
-    await this.model.updateOne(params.filter, params.update as any);
+    await this.updateOne({
+      filter: params.filter,
+      update: params.update,
+    });
   }
 
   async updateDepartmentMany(params: {
@@ -51,6 +42,9 @@ export class DepartmentRepository extends MongoRepository<DepartmentDocument> {
       $addToSet?: { related?: string };
     };
   }): Promise<void> {
-    await this.model.updateMany(params.filter, params.update as any);
+    await this.updateMany({
+      filter: params.filter,
+      update: params.update,
+    });
   }
 }
